@@ -14,15 +14,55 @@ enum class TokenType {
 
 struct Token {
     TokenType type;
-    std::optional<std::string> value;
+    std::optional<std::string> value {};
 };
 
 
-std::vector<Token> tokenize(const std::string& contents) {
-    for (char c: contents) {
-        std::cout << c << std::endl;
+std::vector<Token> tokenize(const std::string& str) {
+    std::vector<Token> tokens;
+    std::string buffer;
+    for (int i = 0; i < str.length(); i++) {
+        char c = str.at(i);
+        if (std::isalpha(c)) {
+            buffer.push_back(c);
+            i++;
+            while (std::isalnum((str.at(i)))) {
+                buffer.push_back(str.at(i));
+                i++;
+            }
+            i--;
+
+            if (buffer == "return") {
+                tokens.push_back(Token{.type = TokenType::_return});
+                buffer.clear();
+                continue;
+            }
+            else {
+                std::cerr << "Unknown identifier: " << buffer << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+        else if (std::isdigit(c)) {
+            buffer.push_back(c);
+            i++;
+            while (std::isdigit(str.at(i))) {
+                buffer.push_back(str.at(i));
+                i++;
+            }
+            i--;
+            tokens.push_back(Token{.type = TokenType::int_lit, .value = buffer});
+            buffer.clear();
+        }
+        else if (c == ';') {
+            tokens.push_back(Token{.type = TokenType::semi});
+        }
+        else if (std::isspace(c)) {
+            continue;
+        }
     }
+    return tokens;
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -45,8 +85,7 @@ int main(int argc, char* argv[]) {
     file_contents = buffer.str();
     file.close();
 
-    tokenize(file_contents);
-
+    std::vector<Token>tokens = tokenize(file_contents);
     return EXIT_SUCCESS;
 }
 
