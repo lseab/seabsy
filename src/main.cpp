@@ -64,6 +64,25 @@ std::vector<Token> tokenize(const std::string& str) {
 }
 
 
+std::string tokens_to_asm(const std::vector<Token>& tokens) {
+    std::stringstream output;
+    for (int i = 0; i < tokens.size(); i++) {
+        const Token& token = tokens.at(i);
+        if (token.type == TokenType::_return) {
+            if (
+                i + 2 < tokens.size() &&
+                tokens.at(i + 1).type == TokenType::int_lit &&
+                tokens.at(i + 2).type == TokenType::semi
+            ) {
+                output << "    mov	w0, " << tokens.at(i + 1).value.value() << "\n";
+                output << "    ret\n";
+            }
+        }
+    }
+    return output.str();
+}
+
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         std::cerr << "Incorrect usage." << std::endl;
