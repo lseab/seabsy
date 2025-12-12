@@ -66,6 +66,7 @@ std::vector<Token> tokenize(const std::string& str) {
 
 std::string tokens_to_asm(const std::vector<Token>& tokens) {
     std::stringstream output;
+    output << ".globl _main\n.p2align 2\n_main:\n";
     for (int i = 0; i < tokens.size(); i++) {
         const Token& token = tokens.at(i);
         if (token.type == TokenType::_return) {
