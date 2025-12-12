@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     file_contents = buffer.str();
     file.close();
 
-    std::vector<Token>tokens = tokenize(file_contents);
+    std::vector<Token> tokens = tokenize(file_contents);
     return EXIT_SUCCESS;
 }
 
