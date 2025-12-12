@@ -105,6 +105,11 @@ int main(int argc, char* argv[]) {
     file.close();
 
     std::vector<Token> tokens = tokenize(file_contents);
+
+    std::ofstream outfile ("test_files/out.asm");
+    outfile << tokens_to_asm(tokens);
+    outfile.close();
+
     return EXIT_SUCCESS;
 }
 
