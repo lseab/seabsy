@@ -3,3 +3,4 @@ build/
 test_files/
 .cache/
 assembly_tests/
+Makefile
