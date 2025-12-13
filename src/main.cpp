@@ -75,7 +75,7 @@ std::string tokens_to_asm(const std::vector<Token>& tokens) {
                 tokens.at(i + 1).type == TokenType::int_lit &&
                 tokens.at(i + 2).type == TokenType::semi
             ) {
-                output << "    mov	w0, " << tokens.at(i + 1).value.value() << "\n";
+                output << "    mov	w0, #" << tokens.at(i + 1).value.value() << "\n";
                 output << "    ret\n";
             }
         }
