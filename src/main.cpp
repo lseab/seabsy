@@ -1,68 +1,9 @@
 #include <iostream>
 #include <fstream>
-#include <optional>
 #include <sstream>
 #include <string>
-#include <vector>
 
-
-enum class TokenType {
-    _return,
-    int_lit,
-    semi,
-};
-
-
-struct Token {
-    TokenType type;
-    std::optional<std::string> value {};
-};
-
-
-std::vector<Token> tokenize(const std::string& str) {
-    std::vector<Token> tokens;
-    std::string buffer;
-    for (int i = 0; i < str.length(); i++) {
-        char c = str.at(i);
-        if (std::isalpha(c)) {
-            buffer.push_back(c);
-            i++;
-            while (std::isalnum((str.at(i)))) {
-                buffer.push_back(str.at(i));
-                i++;
-            }
-            i--;
-
-            if (buffer == "return") {
-                tokens.push_back(Token{.type = TokenType::_return});
-                buffer.clear();
-                continue;
-            }
-            else {
-                std::cerr << "Unknown identifier: " << buffer << std::endl;
-                exit(EXIT_FAILURE);
-            }
-        }
-        else if (std::isdigit(c)) {
-            buffer.push_back(c);
-            i++;
-            while (std::isdigit(str.at(i))) {
-                buffer.push_back(str.at(i));
-                i++;
-            }
-            i--;
-            tokens.push_back(Token{.type = TokenType::int_lit, .value = buffer});
-            buffer.clear();
-        }
-        else if (c == ';') {
-            tokens.push_back(Token{.type = TokenType::semi});
-        }
-        else if (std::isspace(c)) {
-            continue;
-        }
-    }
-    return tokens;
-}
+#include "tokenization.h"
 
 
 std::string handle_int64_immediates(uint64_t immediate) {
@@ -157,7 +98,8 @@ int main(int argc, char* argv[]) {
     file_contents = buffer.str();
     file.close();
 
-    std::vector<Token> tokens = tokenize(file_contents);
+    Tokenizer tokenizer(file_contents);
+    std::vector<Token> tokens = tokenizer.tokenize();
 
     std::ofstream outfile ("test_files/out.asm");
     outfile << tokens_to_asm(tokens);
