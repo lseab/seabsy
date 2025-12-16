@@ -11,6 +11,7 @@ enum class TokenType {
     int_lit,
     semi,
     ident,
+    let,
 };
 
 
@@ -38,6 +39,11 @@ class Tokenizer {
                     }
                     if (buffer == "return") {
                         tokens.push_back(Token{.type = TokenType::_return});
+                        buffer.clear();
+                        continue;
+                    }
+                    else if (buffer == "let") {
+                        tokens.push_back(Token{.type = TokenType::let});
                         buffer.clear();
                         continue;
                     }
