@@ -68,10 +68,10 @@ class Tokenizer {
         }
 
     private:
-        std::optional<char> inspect() const
+        std::optional<char> inspect(int offset = 0) const
         {
-            if (m_index >= m_src.length()) return {};
-            else return m_src.at(m_index);
+            if (m_index + offset >= m_src.length()) return {};
+            else return m_src.at(m_index + offset);
         }
 
         char consume() {

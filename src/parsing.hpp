@@ -47,10 +47,10 @@ public:
     }
 
 private:
-    std::optional<Token> inspect() const
+    std::optional<Token> inspect(int offset = 0) const
     {
-        if (m_index >= m_tokens.size()) return {};
-        else return m_tokens.at(m_index);
+        if (m_index + offset >= m_tokens.size()) return {};
+        else return m_tokens.at(m_index + offset);
     }
 
     Token consume() {
