@@ -10,6 +10,7 @@ enum class TokenType {
     _return,
     int_lit,
     semi,
+    ident,
 };
 
 
@@ -41,8 +42,8 @@ class Tokenizer {
                         continue;
                     }
                     else {
-                        std::cerr << "Unknown identifier: " << buffer << std::endl;
-                        exit(EXIT_FAILURE);
+                        tokens.push_back(Token{.type = TokenType::ident, .value = buffer});
+                        continue;
                     }
                 }
                 else if (std::isdigit(inspect().value())) {
