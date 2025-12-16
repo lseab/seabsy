@@ -12,6 +12,7 @@ enum class TokenType {
     semi,
     ident,
     let,
+    eq,
 };
 
 
@@ -44,6 +45,11 @@ class Tokenizer {
                     }
                     else if (buffer == "let") {
                         tokens.push_back(Token{.type = TokenType::let});
+                        buffer.clear();
+                        continue;
+                    }
+                    else if (buffer == "=") {
+                        tokens.push_back(Token{.type = TokenType::eq});
                         buffer.clear();
                         continue;
                     }
