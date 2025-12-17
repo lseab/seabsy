@@ -68,6 +68,8 @@ public:
             uint64_t int_value = std::stoll(token->value.value());
             std::string immediate_output = handle_int64_immediates(int_value);
             m_output << immediate_output;
+            increment_stack();
+            store("x0", 8);
         }
         else if (auto value = std::get_if<NodeExprIdent>(&expr.expr)) {
         }
@@ -94,6 +96,25 @@ public:
     }
 
 private:
+    void increment_stack(int positions = 1) {
+        m_output << "    sub sp, sp, #" << positions * 16 << "\n";
+        m_stack_position += positions;
+    }
+
+    void decrement_stack(int positions = 1) {
+        m_output << "    add sp, sp, #" << positions * 16 << "\n";
+        m_stack_position -= positions;
+    }
+
+    void store(std::string reg, int stack_offset) {
+        m_output << "    str " << reg << ", [sp, #" << stack_offset << "]\n";
+    }
+
+    void load(std::string reg, int stack_offset) {
+        m_output << "    ldr " << reg << ", [sp, #" << stack_offset << "]\n";
+    }
+
     NodeProgram m_prog;
     std::stringstream m_output;
+    size_t m_stack_position = 0;
 };
