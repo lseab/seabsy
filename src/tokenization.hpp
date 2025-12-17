@@ -48,13 +48,9 @@ class Tokenizer {
                         buffer.clear();
                         continue;
                     }
-                    else if (buffer == "=") {
-                        tokens.push_back(Token{.type = TokenType::eq});
-                        buffer.clear();
-                        continue;
-                    }
                     else {
                         tokens.push_back(Token{.type = TokenType::ident, .value = buffer});
+                        buffer.clear();
                         continue;
                     }
                 }
@@ -69,6 +65,12 @@ class Tokenizer {
                 else if (inspect().value() == ';') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::semi});
+                    continue;
+                }
+                else if (inspect().value() == '=') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::eq});
+                    continue;
                 }
                 else if (std::isspace(inspect().value())) {
                     consume();

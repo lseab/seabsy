@@ -1,7 +1,7 @@
 #include <sstream>
 #include <string>
 #include <iostream>
-#include <optional>
+#include <variant>
 
 #include "parsing.hpp"
 
@@ -56,21 +56,44 @@ std::string handle_int64_immediates(uint64_t immediate) {
 
 class Generator {
 public:
-    inline Generator(NodeReturn root) :
-        m_root(root)
+    inline Generator(NodeProgram prog) :
+        m_prog(prog)
     {
     }
-    inline std::string generate() {
-        std::stringstream output;
-        output << ".globl _main\n.p2align 2\n_main:\n";
-        std::optional<Token> token = m_root.expr.int_lit;
-        uint64_t int_value = std::stoll(token->value.value());
-        std::string immediate_output = handle_int64_immediates(int_value);
-        output << immediate_output;
-        output << "    ret\n";
-        return output.str();
+
+    inline void gen_expr(const NodeExpr expr) {
+        if (auto value = std::get_if<NodeExprIntLit>(&expr.expr)) {
+            NodeExprIntLit int_lit_expr = std::get<NodeExprIntLit>(expr.expr);
+            std::optional<Token> token = int_lit_expr.int_lit;
+            uint64_t int_value = std::stoll(token->value.value());
+            std::string immediate_output = handle_int64_immediates(int_value);
+            m_output << immediate_output;
+        }
+        else if (auto value = std::get_if<NodeExprIdent>(&expr.expr)) {
+        }
+    }
+
+    inline void gen_stmt(const NodeStmt stmt) {
+        if (auto value = std::get_if<NodeStmtReturn>(&stmt.stmt)) {
+            NodeStmtReturn stmt_return = std::get<NodeStmtReturn>(stmt.stmt);
+            gen_expr(stmt_return.expr);
+            m_output << "    ret\n";
+        }
+        else if (auto value = std::get_if<NodeStmtLet>(&stmt.stmt)) {
+            NodeStmtLet stmt_let = std::get<NodeStmtLet>(stmt.stmt);
+            gen_expr(stmt_let.expr);
+        }
+    }
+
+    inline std::string gen_program() {
+        m_output << ".globl _main\n.p2align 2\n_main:\n";
+        for (const NodeStmt stmt: m_prog.stmts) {
+            gen_stmt(stmt);
+        }
+        return m_output.str();
     }
 
 private:
-    NodeReturn m_root;
+    NodeProgram m_prog;
+    std::stringstream m_output;
 };

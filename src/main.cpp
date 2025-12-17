@@ -31,11 +31,11 @@ int main(int argc, char* argv[]) {
     Tokenizer tokenizer(file_contents);
     std::vector<Token> tokens = tokenizer.tokenize();
     Parser parser(tokens);
-    std::optional<NodeReturn> tree = parser.parse();
-    std::optional<Generator> generator(tree);
+    std::optional<NodeProgram> program = parser.parse_program();
+    std::optional<Generator> generator(program);
 
     std::ofstream outfile ("test_files/out.asm");
-    outfile << generator->generate();
+    outfile << generator->gen_program();
     outfile.close();
 
     return EXIT_SUCCESS;
