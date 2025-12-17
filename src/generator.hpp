@@ -71,7 +71,11 @@ public:
             increment_stack();
             store("x0", 8);
         }
-        else if (auto value = std::get_if<NodeExprIdent>(&expr.expr)) {
+        else if (auto ident_expr = std::get_if<NodeExprIdent>(&expr.expr)) {
+            Token token = ident_expr->ident;
+            std::string ident = token.value.value();
+            Var var = var_map[ident];
+            load("x0", 8 + (m_stack_position - var.stack_position) * 16);
         }
     }
 
@@ -79,11 +83,20 @@ public:
         if (auto value = std::get_if<NodeStmtReturn>(&stmt.stmt)) {
             NodeStmtReturn stmt_return = std::get<NodeStmtReturn>(stmt.stmt);
             gen_expr(stmt_return.expr);
+            decrement_stack(m_stack_position);
             m_output << "    ret\n";
         }
         else if (auto value = std::get_if<NodeStmtLet>(&stmt.stmt)) {
             NodeStmtLet stmt_let = std::get<NodeStmtLet>(stmt.stmt);
-            gen_expr(stmt_let.expr);
+            std::string ident = stmt_let.ident.value.value();
+            if (var_map.contains(ident)) {
+                std::cerr << "Redefinition of " << ident << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            else {
+                gen_expr(stmt_let.expr);
+                var_map[ident] = Var{.ident = ident, .stack_position = m_stack_position};
+            }
         }
     }
 
@@ -114,7 +127,13 @@ private:
         m_output << "    ldr " << reg << ", [sp, #" << stack_offset << "]\n";
     }
 
+    struct Var {
+        std::string ident;
+        size_t stack_position;
+    };
+
     NodeProgram m_prog;
     std::stringstream m_output;
     size_t m_stack_position = 0;
+    std::unordered_map<std::string, Var> var_map;
 };
