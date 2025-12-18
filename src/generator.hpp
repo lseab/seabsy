@@ -62,27 +62,50 @@ public:
     {
     }
 
-    inline void gen_term(const NodeTerm* term) {
+    inline size_t gen_term(const NodeTerm* term) {
         if (auto int_lit_term = std::get_if<NodeTermIntLit*>(&term->term)) {
             Token token = (*int_lit_term)->int_lit;
             uint64_t int_value = std::stoll(token.value.value());
             std::string immediate_output = handle_int64_immediates(int_value);
             m_output << immediate_output;
             increment_stack();
-            store("x0", 8);
+            return store("x0", 8);
         }
         else if (auto ident_term = std::get_if<NodeTermIdent*>(&term->term)) {
             Token token = (*ident_term)->ident;
             std::string ident = token.value.value();
             Var var = var_map[ident];
             load("x0", 8 + (m_stack_position - var.stack_position) * 16);
+            increment_stack();
+            return store("x0", 8);
         }
+        return {};
     }
 
-    inline void gen_expr(const NodeExpr* expr) {
-        if (auto term_expr = std::get_if<NodeTerm*>(&expr->expr)) {
-            gen_term((*term_expr));
+    inline size_t gen_bin_expr(const NodeBinExpr* bin_expr) {
+        if (auto add_bin_expr = std::get_if<NodeBinExprAdd*>(&bin_expr->bin_expr)) {
+            size_t stack_pos_l = gen_expr((*add_bin_expr)->lhs);
+            size_t stack_pos_r = gen_expr((*add_bin_expr)->rhs);
+            // pop the last
+            load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
+            load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
+            // add values
+            add("x0", "x7", "x8");
+            // push result to stack
+            increment_stack();
+            return store("x0", 8);
         }
+        return {};
+    }
+
+    inline size_t gen_expr(const NodeExpr* expr) {
+        if (auto term_expr = std::get_if<NodeTerm*>(&expr->expr)) {
+            return gen_term((*term_expr));
+        }
+        else if (auto bin_expr = std::get_if<NodeBinExpr*>(&expr->expr)) {
+            return gen_bin_expr((*bin_expr));
+        }
+        return {};
     }
 
     inline void gen_stmt(const NodeStmt* stmt) {
@@ -123,8 +146,11 @@ private:
         m_stack_position -= positions;
     }
 
-    void store(std::string reg, int stack_offset) {
+    size_t store(std::string reg, int stack_offset) {
+        // Stores the value at a given register on the stack (with a given offset)
+        // Returns the stack position at the time of storing
         m_output << "    str " << reg << ", [sp, #" << stack_offset << "]\n";
+        return m_stack_position;
     }
 
     void load(std::string reg, int stack_offset) {

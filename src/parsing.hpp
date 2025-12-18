@@ -33,9 +33,32 @@ public:
     inline std::optional<NodeExpr*> parse_expr() {
         if (inspect().has_value()) {
             if (auto term = parse_term()) {
-                NodeExpr* expr = m_arena.alloc<NodeExpr>();
-                expr->expr = term.value();
-                return expr;
+                if (inspect().has_value() && inspect().value().type == TokenType::plus) {
+                    // consume the + operator
+                    consume();
+                    // create the binary expression node
+                    auto bin_expr = m_arena.alloc<NodeBinExpr>();
+                    auto bin_expr_add = m_arena.alloc<NodeBinExprAdd>();
+                    auto lhs_expr = m_arena.alloc<NodeExpr>();
+                    lhs_expr->expr = term.value();
+                    bin_expr_add->lhs = lhs_expr;
+                    if (auto rhs_expr = parse_expr()) {
+                        bin_expr_add->rhs = rhs_expr.value();
+                        bin_expr->bin_expr = bin_expr_add;
+                        auto expr = m_arena.alloc<NodeExpr>();
+                        expr->expr = bin_expr;
+                        return expr;
+                    }
+                    else {
+                        std::cerr << "Expected expression" << std::endl;
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else {
+                    auto expr = m_arena.alloc<NodeExpr>();
+                    expr->expr = term.value();
+                    return expr;
+                }
             }
         }
         return {};
