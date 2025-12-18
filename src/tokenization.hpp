@@ -13,6 +13,7 @@ enum class TokenType {
     ident,
     let,
     eq,
+    plus,
 };
 
 
@@ -70,6 +71,11 @@ class Tokenizer {
                 else if (inspect().value() == '=') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::eq});
+                    continue;
+                }
+                else if (inspect().value() == '+') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::plus});
                     continue;
                 }
                 else if (std::isspace(inspect().value())) {
