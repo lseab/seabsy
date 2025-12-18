@@ -131,6 +131,10 @@ private:
         m_output << "    ldr " << reg << ", [sp, #" << stack_offset << "]\n";
     }
 
+    void add(std::string result_reg, std::string lhs_reg, std::string rhs_reg) {
+        m_output << "    add " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
+    }
+
     struct Var {
         std::string ident;
         size_t stack_position;
