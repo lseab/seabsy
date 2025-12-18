@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -6,7 +7,7 @@
 #include "parsing.hpp"
 
 
-std::string handle_int64_immediates(uint64_t immediate) {
+inline std::string handle_int64_immediates(uint64_t immediate) {
     std::stringstream output;
     bool started = false;
 
@@ -61,40 +62,37 @@ public:
     {
     }
 
-    inline void gen_expr(const NodeExpr expr) {
-        if (auto value = std::get_if<NodeExprIntLit>(&expr.expr)) {
-            NodeExprIntLit int_lit_expr = std::get<NodeExprIntLit>(expr.expr);
-            std::optional<Token> token = int_lit_expr.int_lit;
-            uint64_t int_value = std::stoll(token->value.value());
+    inline void gen_expr(const NodeExpr* expr) {
+        if (auto int_lit_expr = std::get_if<NodeExprIntLit*>(&expr->expr)) {
+            Token token = (*int_lit_expr)->int_lit;
+            uint64_t int_value = std::stoll(token.value.value());
             std::string immediate_output = handle_int64_immediates(int_value);
             m_output << immediate_output;
             increment_stack();
             store("x0", 8);
         }
-        else if (auto ident_expr = std::get_if<NodeExprIdent>(&expr.expr)) {
-            Token token = ident_expr->ident;
+        else if (auto ident_expr = std::get_if<NodeExprIdent*>(&expr->expr)) {
+            Token token = (*ident_expr)->ident;
             std::string ident = token.value.value();
             Var var = var_map[ident];
             load("x0", 8 + (m_stack_position - var.stack_position) * 16);
         }
     }
 
-    inline void gen_stmt(const NodeStmt stmt) {
-        if (auto value = std::get_if<NodeStmtReturn>(&stmt.stmt)) {
-            NodeStmtReturn stmt_return = std::get<NodeStmtReturn>(stmt.stmt);
-            gen_expr(stmt_return.expr);
+    inline void gen_stmt(const NodeStmt* stmt) {
+        if (auto stmt_return = std::get_if<NodeStmtReturn*>(&stmt->stmt)) {
+            gen_expr((*stmt_return)->expr);
             decrement_stack(m_stack_position);
             m_output << "    ret\n";
         }
-        else if (auto value = std::get_if<NodeStmtLet>(&stmt.stmt)) {
-            NodeStmtLet stmt_let = std::get<NodeStmtLet>(stmt.stmt);
-            std::string ident = stmt_let.ident.value.value();
+        else if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->stmt)) {
+            std::string ident = (*stmt_let)->ident.value.value();
             if (var_map.contains(ident)) {
                 std::cerr << "Redefinition of " << ident << std::endl;
                 exit(EXIT_FAILURE);
             }
             else {
-                gen_expr(stmt_let.expr);
+                gen_expr((*stmt_let)->expr);
                 var_map[ident] = Var{.ident = ident, .stack_position = m_stack_position};
             }
         }
@@ -102,7 +100,7 @@ public:
 
     inline std::string gen_program() {
         m_output << ".globl _main\n.p2align 2\n_main:\n";
-        for (const NodeStmt stmt: m_prog.stmts) {
+        for (NodeStmt* stmt: m_prog.stmts) {
             gen_stmt(stmt);
         }
         return m_output.str();

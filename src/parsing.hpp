@@ -1,32 +1,43 @@
+#include "arena.hpp"
 #include "grammar.hpp"
 
 
 class Parser {
 public:
-    inline Parser(const std::vector<Token> tokens):
-        m_tokens(tokens)
+    inline Parser(const std::vector<Token> tokens)
+        : m_tokens(tokens)
+        , m_arena(1024 * 1024 * 4) // 4mb
         {
         };
 
-    inline std::optional<NodeExpr> parse_expr() {
+    inline std::optional<NodeExpr*> parse_expr() {
         if (inspect().has_value()) {
             if (inspect().value().type == TokenType::int_lit) {
-                return NodeExpr{.expr = NodeExprIntLit{.int_lit = consume()}};
+                NodeExprIntLit* expr_int_lit = m_arena.alloc<NodeExprIntLit>();
+                expr_int_lit->int_lit = consume();
+                NodeExpr* expr = m_arena.alloc<NodeExpr>();
+                expr->expr = expr_int_lit;
+                return expr;
             }
             else if (inspect().value().type == TokenType::ident) {
-                return NodeExpr{.expr = NodeExprIdent{.ident = consume()}};
+                NodeExprIdent* expr_ident = m_arena.alloc<NodeExprIdent>();
+                expr_ident->ident = consume();
+                NodeExpr* expr = m_arena.alloc<NodeExpr>();
+                expr->expr = expr_ident;
+                return expr;
             }
         }
         return {};
     };
 
-    inline std::optional<NodeStmt> parse_stmt() {
+    inline std::optional<NodeStmt*> parse_stmt() {
         if (inspect().has_value()) {
             if (inspect().value().type == TokenType::_return) {
                 consume();
-                NodeStmtReturn stmt_return;
+                NodeStmt* stmt = m_arena.alloc<NodeStmt>();
+                NodeStmtReturn* stmt_return = m_arena.alloc<NodeStmtReturn>();
                 if (auto node_expr = parse_expr()) {
-                    stmt_return = {.expr = node_expr.value()};
+                    stmt_return->expr = node_expr.value();
                 }
                 else {
                     std::cerr << "Inalid expression" << std::endl;
@@ -39,20 +50,24 @@ public:
                     std::cerr << "Expected ;" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                return NodeStmt{.stmt = stmt_return};
+                stmt->stmt = stmt_return;
+                return stmt;
             }
             else if (
                 inspect().value().type == TokenType::let &&
                 inspect(1).value().type == TokenType::ident &&
                 inspect(2).value().type == TokenType::eq
             ) {
+                NodeStmt* stmt = m_arena.alloc<NodeStmt>();
+                NodeStmtLet* stmt_let = m_arena.alloc<NodeStmtLet>();
                 // consume the let token
                 consume();
-                auto stmt_let = NodeStmtLet{.ident = consume()};
+                // consume the identifier
+                stmt_let->ident = consume();
                 // consume the = token
                 consume();
                 if (auto node_expr = parse_expr()) {
-                    stmt_let.expr = node_expr.value();
+                    stmt_let->expr = node_expr.value();
                 }
                 else {
                     std::cerr << "Expected expression after let" << std::endl;
@@ -64,7 +79,8 @@ public:
                 else {
                     std::cerr << "Expected ;" << std::endl;
                 }
-                return NodeStmt{.stmt = stmt_let};
+                stmt->stmt = stmt_let;
+                return stmt;
             }
         }
         return {};
@@ -99,4 +115,5 @@ private:
 
     const std::vector<Token> m_tokens;
     size_t m_index = 0;
+    ArenaAllocator m_arena;
 };

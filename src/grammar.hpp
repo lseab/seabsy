@@ -14,26 +14,26 @@ struct NodeExprIntLit {
 
 
 struct NodeExpr {
-    std::variant<NodeExprIdent, NodeExprIntLit> expr;
+    std::variant<NodeExprIdent*, NodeExprIntLit*> expr;
 };
 
 
 struct NodeStmtReturn {
-    NodeExpr expr;
+    NodeExpr* expr;
 };
 
 
 struct NodeStmtLet {
     Token ident;
-    NodeExpr expr;
+    NodeExpr* expr;
 };
 
 
 struct NodeStmt {
-    std::variant<NodeStmtReturn, NodeStmtLet> stmt;
+    std::variant<NodeStmtReturn*, NodeStmtLet*> stmt;
 };
 
 
 struct NodeProgram {
-    std::vector<NodeStmt> stmts;
+    std::vector<NodeStmt*> stmts;
 };
