@@ -3,18 +3,23 @@
 #include "tokenization.hpp"
 
 
-struct NodeExprIdent {
+struct NodeTermIdent {
     Token ident;
 };
 
 
-struct NodeExprIntLit {
+struct NodeTermIntLit {
     Token int_lit;
 };
 
 
+struct NodeTerm {
+    std::variant<NodeTermIntLit*, NodeTermIdent*> term;
+};
+
+
 struct NodeExpr {
-    std::variant<NodeExprIdent*, NodeExprIntLit*> expr;
+    std::variant<NodeTerm*> expr;
 };
 
 

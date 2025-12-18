@@ -10,20 +10,31 @@ public:
         {
         };
 
-    inline std::optional<NodeExpr*> parse_expr() {
+    inline std::optional<NodeTerm*> parse_term() {
         if (inspect().has_value()) {
             if (inspect().value().type == TokenType::int_lit) {
-                NodeExprIntLit* expr_int_lit = m_arena.alloc<NodeExprIntLit>();
-                expr_int_lit->int_lit = consume();
-                NodeExpr* expr = m_arena.alloc<NodeExpr>();
-                expr->expr = expr_int_lit;
-                return expr;
+                NodeTermIntLit* term_int_lit = m_arena.alloc<NodeTermIntLit>();
+                term_int_lit->int_lit = consume();
+                NodeTerm* term = m_arena.alloc<NodeTerm>();
+                term->term = term_int_lit;
+                return term;
             }
             else if (inspect().value().type == TokenType::ident) {
-                NodeExprIdent* expr_ident = m_arena.alloc<NodeExprIdent>();
-                expr_ident->ident = consume();
+                NodeTermIdent* term_ident = m_arena.alloc<NodeTermIdent>();
+                term_ident->ident = consume();
+                NodeTerm* term = m_arena.alloc<NodeTerm>();
+                term->term = term_ident;
+                return term;
+            }
+        }
+        return {};
+    };
+
+    inline std::optional<NodeExpr*> parse_expr() {
+        if (inspect().has_value()) {
+            if (auto term = parse_term()) {
                 NodeExpr* expr = m_arena.alloc<NodeExpr>();
-                expr->expr = expr_ident;
+                expr->expr = term.value();
                 return expr;
             }
         }
