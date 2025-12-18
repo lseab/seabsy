@@ -18,8 +18,11 @@ struct NodeTerm {
 };
 
 
+struct NodeBinExpr;
+
+
 struct NodeExpr {
-    std::variant<NodeTerm*> expr;
+    std::variant<NodeTerm*, NodeBinExpr*> expr;
 };
 
 
@@ -41,4 +44,19 @@ struct NodeStmt {
 
 struct NodeProgram {
     std::vector<NodeStmt*> stmts;
+};
+
+
+struct NodeBinExprAdd {
+    NodeExpr* lhs;
+    NodeExpr* rhs;
+};
+
+struct NodeBinExprMulti {
+    NodeExpr* lhs;
+    NodeExpr* rhs;
+};
+
+struct NodeBinExpr {
+    std::variant<NodeBinExprAdd*, NodeBinExprMulti*> bin_expr;
 };
