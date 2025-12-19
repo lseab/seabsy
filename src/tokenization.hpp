@@ -17,6 +17,18 @@ enum class TokenType {
 };
 
 
+inline std::optional<int> bin_prec(TokenType type) {
+    switch (type) {
+        case TokenType::plus:
+            return 0;
+        case TokenType::star:
+            return 1;
+        default:
+            return {};
+    }
+}
+
+
 struct Token {
     TokenType type;
     std::optional<std::string> value {};

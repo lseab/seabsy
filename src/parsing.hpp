@@ -1,3 +1,4 @@
+#include <iostream>
 #include "arena.hpp"
 #include "grammar.hpp"
 
@@ -28,34 +29,51 @@ public:
         return {};
     };
 
-    inline std::optional<NodeExpr*> parse_expr() {
-        if (auto term = parse_term()) {
-            if (try_consume(TokenType::plus)) {
-                // create the binary expression node
-                auto bin_expr = m_arena.alloc<NodeBinExpr>();
-                auto bin_expr_add = m_arena.alloc<NodeBinExprAdd>();
-                auto lhs_expr = m_arena.alloc<NodeExpr>();
-                lhs_expr->expr = term.value();
-                bin_expr_add->lhs = lhs_expr;
-                if (auto rhs_expr = parse_expr()) {
-                    bin_expr_add->rhs = rhs_expr.value();
-                    bin_expr->bin_expr = bin_expr_add;
-                    auto expr = m_arena.alloc<NodeExpr>();
-                    expr->expr = bin_expr;
-                    return expr;
-                }
-                else {
-                    std::cerr << "Expected expression" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else {
-                auto expr = m_arena.alloc<NodeExpr>();
-                expr->expr = term.value();
-                return expr;
-            }
+    inline std::optional<NodeExpr*> parse_expr(int min_prec = 0) {
+        auto term = parse_term();
+        if (!term.has_value()) {
+            return {};
         }
-        return {};
+        auto term_expr = m_arena.alloc<NodeExpr>();
+        term_expr->expr = term.value();
+
+        while (true) {
+            std::optional<Token> current_token = inspect();
+            if (!current_token.has_value()){
+                break;
+            }
+            auto prec = bin_prec(current_token->type);
+            if (!prec.has_value() || prec < min_prec) {
+                break;
+            }
+
+            consume();
+            int next_min_prec = prec.value() + 1; // left commutative
+            auto rhs_expr = parse_expr(next_min_prec);
+            if (!rhs_expr.has_value()) {
+                std::cerr << "Expected expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            auto bin_expr = m_arena.alloc<NodeBinExpr>();
+            auto lhs_expr = m_arena.alloc<NodeExpr>();;
+            lhs_expr->expr = term_expr->expr;
+            if (current_token->type == TokenType::plus) {
+                auto bin_expr_add = m_arena.alloc<NodeBinExprAdd>();
+                bin_expr->bin_expr = bin_expr_add;
+                bin_expr_add->lhs = lhs_expr;
+                bin_expr_add->rhs = rhs_expr.value();
+            }
+            else if (current_token->type == TokenType::star) {
+                auto bin_expr_multi = m_arena.alloc<NodeBinExprMulti>();
+                bin_expr->bin_expr = bin_expr_multi;
+                bin_expr_multi->lhs = lhs_expr;
+                bin_expr_multi->rhs = rhs_expr.value();
+            }
+
+            term_expr->expr = bin_expr;
+        }
+        return term_expr;
     };
 
     inline std::optional<NodeStmt*> parse_stmt() {
