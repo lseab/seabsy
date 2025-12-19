@@ -106,7 +106,18 @@ public:
             // push result to stack
             increment_stack();
             return store("x0", 8);
-
+        }
+        else if (auto sub_bin_expr = std::get_if<NodeBinExprSub*>(&bin_expr->bin_expr)) {
+            size_t stack_pos_l = gen_expr((*sub_bin_expr)->lhs);
+            size_t stack_pos_r = gen_expr((*sub_bin_expr)->rhs);
+            // pop the last
+            load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
+            load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
+            // add values
+            sub("x0", "x7", "x8");
+            // push result to stack
+            increment_stack();
+            return store("x0", 8);
         }
         return {};
     }
@@ -176,6 +187,10 @@ private:
 
     void mul(std::string result_reg, std::string lhs_reg, std::string rhs_reg) {
         m_output << "    mul " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
+    }
+
+    void sub(std::string result_reg, std::string lhs_reg, std::string rhs_reg) {
+        m_output << "    sub " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
     }
 
     struct Var {
