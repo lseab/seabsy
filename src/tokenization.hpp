@@ -13,6 +13,7 @@ enum class TokenType {
     let,
     eq,
     plus,
+    sub,
     star,
 };
 
@@ -20,6 +21,7 @@ enum class TokenType {
 inline std::optional<int> bin_prec(TokenType type) {
     switch (type) {
         case TokenType::plus:
+        case TokenType::sub:
             return 0;
         case TokenType::star:
             return 1;
@@ -93,6 +95,11 @@ class Tokenizer {
                 else if (inspect().value() == '*') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::star});
+                    continue;
+                }
+                else if (inspect().value() == '-') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::sub});
                     continue;
                 }
                 else if (std::isspace(inspect().value())) {
