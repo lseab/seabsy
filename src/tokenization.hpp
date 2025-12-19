@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <optional>
 #include <string>
 #include <vector>
@@ -14,6 +13,7 @@ enum class TokenType {
     let,
     eq,
     plus,
+    star,
 };
 
 
@@ -88,6 +88,11 @@ class Tokenizer {
                 else if (inspect().value() == '+') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::plus});
+                    continue;
+                }
+                else if (inspect().value() == '*') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::star});
                     continue;
                 }
                 else if (std::isspace(inspect().value())) {
