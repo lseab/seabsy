@@ -85,7 +85,12 @@ public:
                 bin_expr_multi->lhs = lhs_expr;
                 bin_expr_multi->rhs = rhs_expr.value();
             }
-
+            else if (current_token->type == TokenType::slash) {
+                auto bin_expr_div = m_arena.alloc<NodeBinExprDiv>();
+                bin_expr->bin_expr = bin_expr_div;
+                bin_expr_div->lhs = lhs_expr;
+                bin_expr_div->rhs = rhs_expr.value();
+            }
             term_expr->expr = bin_expr;
         }
         return term_expr;

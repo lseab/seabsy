@@ -59,6 +59,11 @@ struct NodeBinExprSub{
     NodeExpr* rhs;
 };
 
+struct NodeBinExprDiv{
+    NodeExpr* lhs;
+    NodeExpr* rhs;
+};
+
 struct NodeBinExpr {
-    std::variant<NodeBinExprAdd*, NodeBinExprMulti*, NodeBinExprSub*> bin_expr;
+    std::variant<NodeBinExprAdd*, NodeBinExprMulti*, NodeBinExprSub*, NodeBinExprDiv*> bin_expr;
 };
