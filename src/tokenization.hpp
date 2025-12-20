@@ -15,6 +15,8 @@ enum class TokenType {
     plus,
     sub,
     star,
+    left_paren,
+    right_paren,
 };
 
 
@@ -80,31 +82,33 @@ class Tokenizer {
                 else if (inspect().value() == ';') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::semi});
-                    continue;
                 }
                 else if (inspect().value() == '=') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::eq});
-                    continue;
                 }
                 else if (inspect().value() == '+') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::plus});
-                    continue;
                 }
                 else if (inspect().value() == '*') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::star});
-                    continue;
                 }
                 else if (inspect().value() == '-') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::sub});
-                    continue;
+                }
+                else if (inspect().value() == '(') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::left_paren});
+                }
+                else if (inspect().value() == ')') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::right_paren});
                 }
                 else if (std::isspace(inspect().value())) {
                     consume();
-                    continue;
                 }
             }
 
