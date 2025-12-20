@@ -79,6 +79,9 @@ public:
             increment_stack();
             return store("x0", 8);
         }
+        else if (auto paren_term = std::get_if<NodeTermParen*>(&term->term)) {
+            return gen_expr((*paren_term)->expr);
+        }
         return {};
     }
 

@@ -26,6 +26,15 @@ public:
             term->term = term_ident;
             return term;
         }
+        else if (auto left_paren = try_consume(TokenType::left_paren)) {
+            std::optional<NodeExpr*> expr = parse_expr();
+            NodeTermParen* term_paren = m_arena.alloc<NodeTermParen>();
+            term_paren->expr = expr.value();
+            NodeTerm* term = m_arena.alloc<NodeTerm>();
+            term->term = term_paren;
+            try_consume(TokenType::right_paren, "Expected )");
+            return term;
+        }
         return {};
     };
 
@@ -90,7 +99,7 @@ public:
                 stmt_return->expr = node_expr.value();
             }
             else {
-                std::cerr << "Inalid expression" << std::endl;
+                std::cerr << "Invalid expression" << std::endl;
                 exit(EXIT_FAILURE);
             }
             try_consume(TokenType::semi, "Expected ;");
