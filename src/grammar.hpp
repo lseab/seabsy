@@ -44,26 +44,8 @@ struct NodeProgram {
     std::vector<NodeStmt*> stmts;
 };
 
-struct NodeBinExprAdd {
-    NodeExpr* lhs;
-    NodeExpr* rhs;
-};
-
-struct NodeBinExprMulti {
-    NodeExpr* lhs;
-    NodeExpr* rhs;
-};
-
-struct NodeBinExprSub{
-    NodeExpr* lhs;
-    NodeExpr* rhs;
-};
-
-struct NodeBinExprDiv{
-    NodeExpr* lhs;
-    NodeExpr* rhs;
-};
-
 struct NodeBinExpr {
-    std::variant<NodeBinExprAdd*, NodeBinExprMulti*, NodeBinExprSub*, NodeBinExprDiv*> bin_expr;
+    Token op;
+    NodeExpr* lhs;
+    NodeExpr* rhs;
 };

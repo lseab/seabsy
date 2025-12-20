@@ -86,55 +86,30 @@ public:
     }
 
     inline size_t gen_bin_expr(const NodeBinExpr* bin_expr) {
-        if (auto add_bin_expr = std::get_if<NodeBinExprAdd*>(&bin_expr->bin_expr)) {
-            size_t stack_pos_l = gen_expr((*add_bin_expr)->lhs);
-            size_t stack_pos_r = gen_expr((*add_bin_expr)->rhs);
-            // pop the last
-            load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
-            load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
-            // add values
-            add("x0", "x7", "x8");
-            // push result to stack
-            increment_stack();
-            return store("x0", 8);
+        size_t stack_pos_l = gen_expr(bin_expr->lhs);
+        size_t stack_pos_r = gen_expr(bin_expr->rhs);
+        // pop the last
+        load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
+        load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
+        switch(bin_expr->op.type) {
+            case TokenType::plus:
+                add("x0", "x7", "x8");
+                break;
+            case TokenType::sub:
+                sub("x0", "x7", "x8");
+                break;
+            case TokenType::slash:
+                div("x0", "x7", "x8");
+                break;
+            case TokenType::star:
+                mul("x0", "x7", "x8");
+                break;
+            default:
+                return {};
         }
-        else if (auto multi_bin_expr = std::get_if<NodeBinExprMulti*>(&bin_expr->bin_expr)) {
-            size_t stack_pos_l = gen_expr((*multi_bin_expr)->lhs);
-            size_t stack_pos_r = gen_expr((*multi_bin_expr)->rhs);
-            // pop the last
-            load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
-            load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
-            // add values
-            mul("x0", "x7", "x8");
-            // push result to stack
-            increment_stack();
-            return store("x0", 8);
-        }
-        else if (auto sub_bin_expr = std::get_if<NodeBinExprSub*>(&bin_expr->bin_expr)) {
-            size_t stack_pos_l = gen_expr((*sub_bin_expr)->lhs);
-            size_t stack_pos_r = gen_expr((*sub_bin_expr)->rhs);
-            // pop the last
-            load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
-            load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
-            // add values
-            sub("x0", "x7", "x8");
-            // push result to stack
-            increment_stack();
-            return store("x0", 8);
-        }
-        else if (auto div_bin_expr = std::get_if<NodeBinExprDiv*>(&bin_expr->bin_expr)) {
-            size_t stack_pos_l = gen_expr((*div_bin_expr)->lhs);
-            size_t stack_pos_r = gen_expr((*div_bin_expr)->rhs);
-            // pop the last
-            load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
-            load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
-            // divide values
-            div("x0", "x7", "x8");
-            // push result to stack
-            increment_stack();
-            return store("x0", 8);
-        }
-        return {};
+        // push result to stack
+        increment_stack();
+        return store("x0", 8);
     }
 
     inline size_t gen_expr(const NodeExpr* expr) {

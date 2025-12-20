@@ -67,30 +67,9 @@ public:
             auto bin_expr = m_arena.alloc<NodeBinExpr>();
             auto lhs_expr = m_arena.alloc<NodeExpr>();;
             lhs_expr->expr = term_expr->expr;
-            if (current_token->type == TokenType::plus) {
-                auto bin_expr_add = m_arena.alloc<NodeBinExprAdd>();
-                bin_expr->bin_expr = bin_expr_add;
-                bin_expr_add->lhs = lhs_expr;
-                bin_expr_add->rhs = rhs_expr.value();
-            }
-            else if (current_token->type == TokenType::star) {
-                auto bin_expr_multi = m_arena.alloc<NodeBinExprMulti>();
-                bin_expr->bin_expr = bin_expr_multi;
-                bin_expr_multi->lhs = lhs_expr;
-                bin_expr_multi->rhs = rhs_expr.value();
-            }
-            else if (current_token->type == TokenType::sub) {
-                auto bin_expr_multi = m_arena.alloc<NodeBinExprSub>();
-                bin_expr->bin_expr = bin_expr_multi;
-                bin_expr_multi->lhs = lhs_expr;
-                bin_expr_multi->rhs = rhs_expr.value();
-            }
-            else if (current_token->type == TokenType::slash) {
-                auto bin_expr_div = m_arena.alloc<NodeBinExprDiv>();
-                bin_expr->bin_expr = bin_expr_div;
-                bin_expr_div->lhs = lhs_expr;
-                bin_expr_div->rhs = rhs_expr.value();
-            }
+            bin_expr->lhs = lhs_expr;
+            bin_expr->rhs = rhs_expr.value();
+            bin_expr->op = current_token.value();
             term_expr->expr = bin_expr;
         }
         return term_expr;
