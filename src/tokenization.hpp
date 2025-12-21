@@ -18,6 +18,8 @@ enum class TokenType {
     slash,
     left_paren,
     right_paren,
+    open_curly,
+    close_curly,
 };
 
 
@@ -112,6 +114,14 @@ class Tokenizer {
                 else if (inspect().value() == ')') {
                     consume();
                     tokens.push_back(Token{.type = TokenType::right_paren});
+                }
+                else if (inspect().value() == '{') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::open_curly});
+                }
+                else if (inspect().value() == '}') {
+                    consume();
+                    tokens.push_back(Token{.type = TokenType::close_curly});
                 }
                 else if (std::isspace(inspect().value())) {
                     consume();
