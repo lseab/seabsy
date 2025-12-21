@@ -5,6 +5,7 @@
 #include <variant>
 
 #include "parsing.hpp"
+#include "scopes.hpp"
 
 
 inline std::string handle_int64_immediates(uint64_t immediate) {
@@ -74,8 +75,8 @@ public:
         else if (auto ident_term = std::get_if<NodeTermIdent*>(&term->term)) {
             Token token = (*ident_term)->ident;
             std::string ident = token.value.value();
-            Var var = var_map[ident];
-            load("x0", 8 + (m_stack_position - var.stack_position) * 16);
+            std::optional<Var> var = m_symbol_handler.findSymbol(ident);
+            load("x0", 8 + (m_stack_position - var.value().stack_position) * 16);
             increment_stack();
             return store("x0", 8);
         }
@@ -130,13 +131,13 @@ public:
         }
         else if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->stmt)) {
             std::string ident = (*stmt_let)->ident.value.value();
-            if (var_map.contains(ident)) {
+            if (m_symbol_handler.findSymbol(ident)) {
                 std::cerr << "Redefinition of " << ident << std::endl;
                 exit(EXIT_FAILURE);
             }
             else {
                 gen_expr((*stmt_let)->expr);
-                var_map[ident] = Var{.ident = ident, .stack_position = m_stack_position};
+                m_symbol_handler.declareSymbol(ident, m_stack_position);
             }
         }
     }
@@ -187,13 +188,8 @@ private:
         m_output << "    sdiv " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
     }
 
-    struct Var {
-        std::string ident;
-        size_t stack_position;
-    };
-
     NodeProgram m_prog;
     std::stringstream m_output;
     size_t m_stack_position = 0;
-    std::unordered_map<std::string, Var> var_map;
+    SymbolManager m_symbol_handler;
 };
