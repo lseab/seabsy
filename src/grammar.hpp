@@ -27,6 +27,8 @@ struct NodeExpr {
     std::variant<NodeTerm*, NodeBinExpr*> expr;
 };
 
+struct NodeStmt;
+
 struct NodeStmtReturn {
     NodeExpr* expr;
 };
@@ -36,8 +38,12 @@ struct NodeStmtLet {
     NodeExpr* expr;
 };
 
+struct NodeStmtScope {
+    std::vector<NodeStmt*> stmts;
+};
+
 struct NodeStmt {
-    std::variant<NodeStmtReturn*, NodeStmtLet*> stmt;
+    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeStmtScope*> stmt;
 };
 
 struct NodeProgram {

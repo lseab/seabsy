@@ -4,7 +4,8 @@ $$
 [\text{Stmt}] &\to
     \begin{cases}
         return\space\ [\text{Expr}]; \\
-        let\space\ \text{ident = [Expr];}
+        let\space\ \text{ident = [Expr];} \\
+        \{[\text{Stmt}]^*\} \\
     \end{cases} \\
 [\text{Expr}] &\to
     \begin{cases}
