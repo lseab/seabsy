@@ -76,6 +76,10 @@ public:
             Token token = (*ident_term)->ident;
             std::string ident = token.value.value();
             std::optional<Var> var = m_symbol_handler.findSymbol(ident);
+            if (!var.has_value()) {
+                std::cerr << "Undefined symbol " << ident << std::endl;
+                exit(EXIT_FAILURE);
+            }
             load("x0", 8 + (m_stack_position - var.value().stack_position) * 16);
             increment_stack();
             return store("x0", 8);
@@ -139,6 +143,13 @@ public:
                 gen_expr((*stmt_let)->expr);
                 m_symbol_handler.declareSymbol(ident, m_stack_position);
             }
+        }
+        else if (auto stmt_scope = std::get_if<NodeStmtScope*>(&stmt->stmt)) {
+            m_symbol_handler.enterScope();
+            for (NodeStmt* stmt: (*stmt_scope)->stmts) {
+                gen_stmt(stmt);
+            }
+            m_symbol_handler.exitScope();
         }
     }
 

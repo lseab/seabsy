@@ -114,6 +114,22 @@ public:
             stmt->stmt = stmt_let;
             return stmt;
         }
+        else if (try_consume(TokenType::open_curly)) {
+            auto scope = m_arena.alloc<NodeStmtScope>();
+            while (inspect().has_value() && inspect().value().type != TokenType::close_curly) {
+                if (auto stmt = parse_stmt()) {
+                    scope->stmts.push_back(stmt.value());
+                }
+                else {
+                    std::cerr << "Invalid statment" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            }
+            try_consume(TokenType::close_curly, "Expected }");
+            auto stmt = m_arena.alloc<NodeStmt>();
+            stmt->stmt = scope;
+            return stmt;
+        }
         return {};
     };
 
