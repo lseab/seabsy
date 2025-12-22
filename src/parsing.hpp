@@ -115,7 +115,7 @@ public:
             return stmt;
         }
         else if (try_consume(TokenType::open_curly)) {
-            auto scope = m_arena.alloc<NodeStmtScope>();
+            auto scope = m_arena.alloc<NodeScope>();
             while (inspect().has_value() && inspect().value().type != TokenType::close_curly) {
                 if (auto stmt = parse_stmt()) {
                     scope->stmts.push_back(stmt.value());

@@ -144,7 +144,7 @@ public:
                 m_symbol_handler.declareSymbol(ident, m_stack_position);
             }
         }
-        else if (auto stmt_scope = std::get_if<NodeStmtScope*>(&stmt->stmt)) {
+        else if (auto stmt_scope = std::get_if<NodeScope*>(&stmt->stmt)) {
             m_symbol_handler.enterScope();
             for (NodeStmt* stmt: (*stmt_scope)->stmts) {
                 gen_stmt(stmt);

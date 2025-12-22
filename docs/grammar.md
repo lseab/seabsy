@@ -5,6 +5,10 @@ $$
     \begin{cases}
         return\space\ [\text{Expr}]; \\
         let\space\ \text{ident = [Expr];} \\
+        [\text{Scope}] \\
+    \end{cases} \\
+[\text{Scope}] &\to
+    \begin{cases}
         \{[\text{Stmt}]^*\} \\
     \end{cases} \\
 [\text{Expr}] &\to
