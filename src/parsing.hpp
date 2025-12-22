@@ -135,6 +135,29 @@ public:
             stmt->stmt = scope.value();
             return stmt;
         }
+        else if (try_consume(TokenType::_if)) {
+            try_consume(TokenType::left_paren, "Expected (");
+            NodeStmt* stmt = m_arena.alloc<NodeStmt>();
+            NodeStmtIf* stmt_if = m_arena.alloc<NodeStmtIf>();
+            if (auto expr = parse_expr()) {
+                stmt_if->expr = expr.value();
+            }
+            else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::right_paren, "Expected )");
+            try_consume(TokenType::open_curly, "Expected {");
+            if (auto scope = parse_scope()) {
+                stmt_if->scope = scope.value();
+            }
+            else {
+                std::cerr << "Invalid scope" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            stmt->stmt = stmt_if;
+            return stmt;
+        }
         return {};
     };
 

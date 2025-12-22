@@ -42,8 +42,13 @@ struct NodeScope {
     std::vector<NodeStmt*> stmts;
 };
 
+struct NodeStmtIf {
+    NodeExpr* expr;
+    NodeScope* scope;
+};
+
 struct NodeStmt {
-    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*> stmt;
+    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*, NodeStmtIf*> stmt;
 };
 
 struct NodeProgram {

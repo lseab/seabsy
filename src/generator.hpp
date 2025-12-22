@@ -155,6 +155,27 @@ public:
         else if (auto scope = std::get_if<NodeScope*>(&stmt->stmt)) {
             gen_scope((*scope));
         }
+        else if (auto stmt_if = std::get_if<NodeStmtIf*>(&stmt->stmt)) {
+            size_t stack_pos = gen_expr((*stmt_if)->expr);
+            // load expression result into x8
+            load("x8", 8 + (m_stack_position - stack_pos) * 16);
+            // Compare result to 0
+            sub("x8", "x8", "#0", true);
+            // Override x8 to 1 if the subtraction result is 0, ie if x8 is 0
+            cset("x8", "eq");
+            std::string true_branch = "LBB0_1";
+            std::string false_branch = "LBB0_2";
+            // set the branching instructions
+            tbnz("w8", "#0", false_branch);
+            branch(true_branch);
+            // define the branches, making sure to reset the stack pointer
+            // after generating the assembly for a given branch
+            add_branch(true_branch);
+            size_t stack_pos_before_branch = m_stack_position;
+            gen_scope((*stmt_if)->scope);
+            add_branch(false_branch);
+            m_stack_position = stack_pos_before_branch;
+        }
     }
 
     inline std::string gen_program() {
@@ -195,12 +216,34 @@ private:
         m_output << "    mul " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
     }
 
-    void sub(std::string result_reg, std::string lhs_reg, std::string rhs_reg) {
-        m_output << "    sub " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
+    void sub(std::string result_reg, std::string lhs_reg, std::string rhs_reg, bool with_flags = false) {
+        if (with_flags) {
+            m_output << "    subs ";
+        }
+        else {
+            m_output << "    sub ";
+        }
+        m_output << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
     }
 
     void div(std::string result_reg, std::string lhs_reg, std::string rhs_reg) {
         m_output << "    sdiv " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
+    }
+
+    void cset(std::string reg, std::string condition) {
+        m_output << "    cset " << reg << ", " << condition << "\n";
+    }
+
+    void tbnz(std::string reg, std::string bit, std::string branch_label) {
+        m_output << "    tbnz " << reg << ", " << bit << ", " << branch_label << "\n";
+    }
+
+    void branch(std::string branch_label) {
+        m_output << "    b " << branch_label << "\n";
+    }
+
+    void add_branch(std::string branch_label) {
+        m_output << branch_label << ":\n";
     }
 
     NodeProgram m_prog;
