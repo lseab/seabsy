@@ -6,6 +6,7 @@ $$
         return\space\ [\text{Expr}]; \\
         let\space\ \text{ident = [Expr];} \\
         [\text{Scope}] \\
+        \text{if} \space ([\text{Expr}]) \space [\text{Scope}] \\
     \end{cases} \\
 [\text{Scope}] &\to
     \begin{cases}
