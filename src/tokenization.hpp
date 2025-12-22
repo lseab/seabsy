@@ -20,6 +20,7 @@ enum class TokenType {
     right_paren,
     open_curly,
     close_curly,
+    _if,
 };
 
 
@@ -66,6 +67,11 @@ class Tokenizer {
                     }
                     else if (buffer == "let") {
                         tokens.push_back(Token{.type = TokenType::let});
+                        buffer.clear();
+                        continue;
+                    }
+                    else if (buffer == "if") {
+                        tokens.push_back(Token{.type = TokenType::_if});
                         buffer.clear();
                         continue;
                     }
