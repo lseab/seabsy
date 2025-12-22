@@ -127,6 +127,14 @@ public:
         return {};
     }
 
+    inline void gen_scope(const NodeScope* scope) {
+        m_symbol_handler.enterScope();
+        for (NodeStmt* stmt: scope->stmts) {
+            gen_stmt(stmt);
+        }
+        m_symbol_handler.exitScope();
+    }
+
     inline void gen_stmt(const NodeStmt* stmt) {
         if (auto stmt_return = std::get_if<NodeStmtReturn*>(&stmt->stmt)) {
             gen_expr((*stmt_return)->expr);
@@ -144,12 +152,8 @@ public:
                 m_symbol_handler.declareSymbol(ident, m_stack_position);
             }
         }
-        else if (auto stmt_scope = std::get_if<NodeScope*>(&stmt->stmt)) {
-            m_symbol_handler.enterScope();
-            for (NodeStmt* stmt: (*stmt_scope)->stmts) {
-                gen_stmt(stmt);
-            }
-            m_symbol_handler.exitScope();
+        else if (auto scope = std::get_if<NodeScope*>(&stmt->stmt)) {
+            gen_scope((*scope));
         }
     }
 
