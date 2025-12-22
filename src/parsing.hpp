@@ -38,6 +38,21 @@ public:
         return {};
     };
 
+    inline std::optional<NodeScope*> parse_scope() {
+        auto scope = m_arena.alloc<NodeScope>();
+        while (inspect().has_value() && inspect().value().type != TokenType::close_curly) {
+            if (auto stmt = parse_stmt()) {
+                scope->stmts.push_back(stmt.value());
+            }
+            else {
+                std::cerr << "Invalid statment" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+        try_consume(TokenType::close_curly, "Expected }");
+        return scope;
+    }
+
     inline std::optional<NodeExpr*> parse_expr(int min_prec = 0) {
         auto term = parse_term();
         if (!term.has_value()) {
@@ -115,19 +130,9 @@ public:
             return stmt;
         }
         else if (try_consume(TokenType::open_curly)) {
-            auto scope = m_arena.alloc<NodeScope>();
-            while (inspect().has_value() && inspect().value().type != TokenType::close_curly) {
-                if (auto stmt = parse_stmt()) {
-                    scope->stmts.push_back(stmt.value());
-                }
-                else {
-                    std::cerr << "Invalid statment" << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-            }
-            try_consume(TokenType::close_curly, "Expected }");
+            auto scope = parse_scope();
             auto stmt = m_arena.alloc<NodeStmt>();
-            stmt->stmt = scope;
+            stmt->stmt = scope.value();
             return stmt;
         }
         return {};
