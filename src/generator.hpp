@@ -100,10 +100,10 @@ public:
             case TokenType::plus:
                 add("x0", "x7", "x8");
                 break;
-            case TokenType::sub:
+            case TokenType::minus:
                 sub("x0", "x7", "x8");
                 break;
-            case TokenType::slash:
+            case TokenType::fslash:
                 div("x0", "x7", "x8");
                 break;
             case TokenType::star:

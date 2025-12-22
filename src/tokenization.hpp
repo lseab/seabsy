@@ -13,9 +13,9 @@ enum class TokenType {
     let,
     eq,
     plus,
-    sub,
+    minus,
     star,
-    slash,
+    fslash,
     left_paren,
     right_paren,
     open_curly,
@@ -27,10 +27,10 @@ enum class TokenType {
 inline std::optional<int> bin_prec(TokenType type) {
     switch (type) {
         case TokenType::plus:
-        case TokenType::sub:
+        case TokenType::minus:
             return 0;
         case TokenType::star:
-        case TokenType::slash:
+        case TokenType::fslash:
             return 1;
         default:
             return {};
@@ -107,11 +107,11 @@ class Tokenizer {
                 }
                 else if (inspect().value() == '-') {
                     consume();
-                    tokens.push_back(Token{.type = TokenType::sub});
+                    tokens.push_back(Token{.type = TokenType::minus});
                 }
                 else if (inspect().value() == '/') {
                     consume();
-                    tokens.push_back(Token{.type = TokenType::slash});
+                    tokens.push_back(Token{.type = TokenType::fslash});
                 }
                 else if (inspect().value() == '(') {
                     consume();
