@@ -183,6 +183,7 @@ public:
         for (NodeStmt* stmt: m_prog.stmts) {
             gen_stmt(stmt);
         }
+        _exit(0);
         return m_output.str();
     }
 
@@ -244,6 +245,11 @@ private:
 
     void add_branch(std::string branch_label) {
         m_output << branch_label << ":\n";
+    }
+
+    void _exit(int exit_code = 0) {
+        m_output << "    mov x0, #" << exit_code << "\n";
+        m_output << "    bl _exit";
     }
 
     NodeProgram m_prog;
