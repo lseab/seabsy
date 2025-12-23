@@ -111,7 +111,28 @@ class Tokenizer {
                 }
                 else if (inspect().value() == '/') {
                     consume();
-                    tokens.push_back(Token{.type = TokenType::fslash});
+                    if (inspect().has_value() && inspect().value() == '/') {
+                        while (inspect().has_value()) {
+                            if (inspect().value() == '\n') {
+                                consume();
+                                break;
+                            }
+                            consume();
+                        }
+                    }
+                    else if (inspect().has_value() && inspect().value() == '*') {
+                        while (inspect().has_value()) {
+                            if (inspect().value() == '*' && inspect(1).value() == '/') {
+                                consume();
+                                consume();
+                                break;
+                            }
+                            consume();
+                        }
+                    }
+                    else {
+                        tokens.push_back(Token{.type = TokenType::fslash});
+                    }
                 }
                 else if (inspect().value() == '(') {
                     consume();
