@@ -21,6 +21,7 @@ enum class TokenType {
     open_curly,
     close_curly,
     _if,
+    _exit,
 };
 
 
@@ -72,6 +73,11 @@ class Tokenizer {
                     }
                     else if (buffer == "if") {
                         tokens.push_back(Token{.type = TokenType::_if});
+                        buffer.clear();
+                        continue;
+                    }
+                    else if (buffer == "exit") {
+                        tokens.push_back(Token{.type = TokenType::_exit});
                         buffer.clear();
                         continue;
                     }

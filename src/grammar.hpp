@@ -33,6 +33,10 @@ struct NodeStmtReturn {
     NodeExpr* expr;
 };
 
+struct NodeStmtExit {
+    NodeExpr* expr;
+};
+
 struct NodeStmtLet {
     Token ident;
     NodeExpr* expr;
@@ -48,7 +52,7 @@ struct NodeStmtIf {
 };
 
 struct NodeStmt {
-    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*, NodeStmtIf*> stmt;
+    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtExit*> stmt;
 };
 
 struct NodeProgram {

@@ -141,6 +141,12 @@ public:
             decrement_stack(m_stack_position);
             m_output << "    ret\n";
         }
+        else if (auto stmt_exit = std::get_if<NodeStmtExit*>(&stmt->stmt)) {
+            size_t stack_pos = gen_expr((*stmt_exit)->expr);
+            decrement_stack(m_stack_position);
+            load("x0", 8 + (m_stack_position - stack_pos) * 16);
+            _exit();
+        }
         else if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->stmt)) {
             std::string ident = (*stmt_let)->ident.value.value();
             if (m_symbol_handler.findSymbol(ident)) {
@@ -183,7 +189,8 @@ public:
         for (NodeStmt* stmt: m_prog.stmts) {
             gen_stmt(stmt);
         }
-        _exit(0);
+        m_output << "    mov x0, #0\n";
+        _exit();
         return m_output.str();
     }
 
@@ -247,9 +254,8 @@ private:
         m_output << branch_label << ":\n";
     }
 
-    void _exit(int exit_code = 0) {
-        m_output << "    mov x0, #" << exit_code << "\n";
-        m_output << "    bl _exit";
+    void _exit() {
+        m_output << "    bl _exit\n";
     }
 
     NodeProgram m_prog;

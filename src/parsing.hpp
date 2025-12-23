@@ -105,6 +105,20 @@ public:
             stmt->stmt = stmt_return;
             return stmt;
         }
+        if (try_consume(TokenType::_exit)) {
+            NodeStmt* stmt = m_arena.alloc<NodeStmt>();
+            NodeStmtExit* stmt_exit = m_arena.alloc<NodeStmtExit>();
+            if (auto node_expr = parse_expr()) {
+                stmt_exit->expr = node_expr.value();
+            }
+            else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semi, "Expected ;");
+            stmt->stmt = stmt_exit;
+            return stmt;
+        }
         else if (
             inspect().value().type == TokenType::let &&
             inspect(1).value().type == TokenType::ident &&
