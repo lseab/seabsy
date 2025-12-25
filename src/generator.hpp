@@ -135,6 +135,28 @@ public:
         m_symbol_handler.exitScope();
     }
 
+    inline void gen_ifstmt(const NodeStmtIf* ifstmt) {
+        size_t stack_pos = gen_expr(ifstmt->expr);
+        // load expression result into x8
+        load("x8", 8 + (m_stack_position - stack_pos) * 16);
+        // Compare result to 0
+        sub("x8", "x8", "#0", true);
+        // Override x8 to 1 if the subtraction result is 0, ie if x8 is 0
+        cset("x8", "eq");
+        std::string true_branch = "LBB0_1";
+        std::string false_branch = "LBB0_2";
+        // set the branching instructions
+        tbnz("w8", "#0", false_branch);
+        branch(true_branch);
+        // define the branches, making sure to reset the stack pointer
+        // after generating the assembly for a given branch
+        add_branch(true_branch);
+        size_t stack_pos_before_branch = m_stack_position;
+        gen_scope(ifstmt->scope);
+        add_branch(false_branch);
+        m_stack_position = stack_pos_before_branch;
+    }
+
     inline void gen_stmt(const NodeStmt* stmt) {
         if (auto stmt_return = std::get_if<NodeStmtReturn*>(&stmt->stmt)) {
             gen_expr((*stmt_return)->expr);
@@ -162,25 +184,7 @@ public:
             gen_scope((*scope));
         }
         else if (auto stmt_if = std::get_if<NodeStmtIf*>(&stmt->stmt)) {
-            size_t stack_pos = gen_expr((*stmt_if)->expr);
-            // load expression result into x8
-            load("x8", 8 + (m_stack_position - stack_pos) * 16);
-            // Compare result to 0
-            sub("x8", "x8", "#0", true);
-            // Override x8 to 1 if the subtraction result is 0, ie if x8 is 0
-            cset("x8", "eq");
-            std::string true_branch = "LBB0_1";
-            std::string false_branch = "LBB0_2";
-            // set the branching instructions
-            tbnz("w8", "#0", false_branch);
-            branch(true_branch);
-            // define the branches, making sure to reset the stack pointer
-            // after generating the assembly for a given branch
-            add_branch(true_branch);
-            size_t stack_pos_before_branch = m_stack_position;
-            gen_scope((*stmt_if)->scope);
-            add_branch(false_branch);
-            m_stack_position = stack_pos_before_branch;
+            gen_ifstmt((*stmt_if));
         }
     }
 
