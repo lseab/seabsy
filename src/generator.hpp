@@ -155,6 +155,18 @@ public:
         gen_scope(ifstmt->scope);
         add_branch(false_branch);
         m_stack_position = stack_pos_before_branch;
+        if (ifstmt->pred.has_value()) {
+            gen_ifpred(ifstmt->pred.value());
+        }
+    }
+
+    inline void gen_ifpred(const NodeIfPred* ifpred) {
+        if (auto ifpred_elif = std::get_if<NodeStmtIf*>(&ifpred->ifpred)) {
+            gen_ifstmt((*ifpred_elif));
+        }
+        else if (auto ifpred_else = std::get_if<NodeIfPredElse*>(&ifpred->ifpred)) {
+            gen_scope((*ifpred_else)->scope);
+        }
     }
 
     inline void gen_stmt(const NodeStmt* stmt) {
