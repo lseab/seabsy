@@ -72,6 +72,7 @@ public:
             std::cerr << "Invalid scope" << std::endl;
             exit(EXIT_FAILURE);
         }
+        stmt_if->pred = parse_if_predicate();
         return stmt_if;
     }
 
@@ -111,6 +112,29 @@ public:
         }
         return term_expr;
     };
+
+    inline std::optional<NodeIfPred*> parse_if_predicate() {
+        if (try_consume(TokenType::_elif)) {
+            NodeIfPred* ifpred = m_arena.alloc<NodeIfPred>();
+            auto stmt_if = parse_if_stmt();
+            ifpred->ifpred = stmt_if.value();
+            return ifpred;
+        }
+        if (try_consume(TokenType::_else)) {
+            NodeIfPred* ifpred = m_arena.alloc<NodeIfPred>();
+            NodeIfPredElse* ifpred_else = m_arena.alloc<NodeIfPredElse>();
+            if (auto scope = parse_scope()) {
+                ifpred_else->scope = scope.value();
+            }
+            else {
+                std::cerr << "Invalid scope" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            ifpred->ifpred = ifpred_else;
+            return ifpred;
+        }
+        return {};
+    }
 
     inline std::optional<NodeStmt*> parse_stmt() {
         if (try_consume(TokenType::_return)) {
