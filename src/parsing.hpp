@@ -39,6 +39,7 @@ public:
     };
 
     inline std::optional<NodeScope*> parse_scope() {
+        try_consume(TokenType::open_curly, "Expected {");
         auto scope = m_arena.alloc<NodeScope>();
         while (inspect().has_value() && inspect().value().type != TokenType::close_curly) {
             if (auto stmt = parse_stmt()) {
@@ -64,7 +65,6 @@ public:
             exit(EXIT_FAILURE);
         }
         try_consume(TokenType::right_paren, "Expected )");
-        try_consume(TokenType::open_curly, "Expected {");
         if (auto scope = parse_scope()) {
             stmt_if->scope = scope.value();
         }
