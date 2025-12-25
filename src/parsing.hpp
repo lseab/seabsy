@@ -53,6 +53,28 @@ public:
         return scope;
     }
 
+    inline std::optional<NodeStmtIf*> parse_if_stmt() {
+        try_consume(TokenType::left_paren, "Expected (");
+        NodeStmtIf* stmt_if = m_arena.alloc<NodeStmtIf>();
+        if (auto expr = parse_expr()) {
+            stmt_if->expr = expr.value();
+        }
+        else {
+            std::cerr << "Invalid expression" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        try_consume(TokenType::right_paren, "Expected )");
+        try_consume(TokenType::open_curly, "Expected {");
+        if (auto scope = parse_scope()) {
+            stmt_if->scope = scope.value();
+        }
+        else {
+            std::cerr << "Invalid scope" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        return stmt_if;
+    }
+
     inline std::optional<NodeExpr*> parse_expr(int min_prec = 0) {
         auto term = parse_term();
         if (!term.has_value()) {
@@ -150,26 +172,9 @@ public:
             return stmt;
         }
         else if (try_consume(TokenType::_if)) {
-            try_consume(TokenType::left_paren, "Expected (");
+            auto stmt_if = parse_if_stmt();
             NodeStmt* stmt = m_arena.alloc<NodeStmt>();
-            NodeStmtIf* stmt_if = m_arena.alloc<NodeStmtIf>();
-            if (auto expr = parse_expr()) {
-                stmt_if->expr = expr.value();
-            }
-            else {
-                std::cerr << "Invalid expression" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            try_consume(TokenType::right_paren, "Expected )");
-            try_consume(TokenType::open_curly, "Expected {");
-            if (auto scope = parse_scope()) {
-                stmt_if->scope = scope.value();
-            }
-            else {
-                std::cerr << "Invalid scope" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            stmt->stmt = stmt_if;
+            stmt->stmt = stmt_if.value();
             return stmt;
         }
         return {};
