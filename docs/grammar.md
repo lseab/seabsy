@@ -6,7 +6,17 @@ $$
         return\space\ [\text{Expr}]; \\
         let\space\ \text{ident = [Expr];} \\
         [\text{Scope}] \\
-        \text{if} \space ([\text{Expr}]) \space [\text{Scope}] \\
+        \text{if} \space [\text{IfStmt}] \\
+    \end{cases} \\
+[\text{IfStmt}] &\to
+    \begin{cases}
+        ([\text{Expr}]) \space [\text{Scope}] \space [\text{IfPred}]
+    \end{cases} \\
+[\text{IfPred}] &\to
+    \begin{cases}
+        \text{elif} \space [\text{IfStmt}] \\
+        \text{else} \space [\text{Scope}] \\
+        \epsilon
     \end{cases} \\
 [\text{Scope}] &\to
     \begin{cases}
