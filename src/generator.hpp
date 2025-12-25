@@ -143,8 +143,8 @@ public:
         sub("x8", "x8", "#0", true);
         // Override x8 to 1 if the subtraction result is 0, ie if x8 is 0
         cset("x8", "eq");
-        std::string true_branch = "LBB0_1";
-        std::string false_branch = "LBB0_2";
+        std::string true_branch = get_branch_label();
+        std::string false_branch = get_branch_label();
         // set the branching instructions
         tbnz("w8", "#0", false_branch);
         branch(true_branch);
@@ -250,6 +250,11 @@ private:
         m_output << "    tbnz " << reg << ", " << bit << ", " << branch_label << "\n";
     }
 
+    std::string get_branch_label() {
+        m_branch_number++;
+        return "LBB0_" + std::to_string(m_branch_number);
+    }
+
     void branch(std::string branch_label) {
         m_output << "    b " << branch_label << "\n";
     }
@@ -265,5 +270,6 @@ private:
     NodeProgram m_prog;
     std::stringstream m_output;
     size_t m_stack_position = 0;
+    size_t m_branch_number = 0;
     SymbolManager m_symbol_handler;
 };
