@@ -3,8 +3,9 @@
 #include <sstream>
 #include <string>
 
-#include "tokenization.hpp"
 #include "generator.hpp"
+#include "parsing.hpp"
+#include "tokenization.hpp"
 
 
 int main(int argc, char* argv[]) {

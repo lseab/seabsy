@@ -8,4 +8,10 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(seabsy src/main.cpp)
+add_executable(seabsy
+    src/main.cpp
+    src/tokenization.cpp
+    src/parsing.cpp
+    src/generator.cpp
+    src/scopes.cpp
+)

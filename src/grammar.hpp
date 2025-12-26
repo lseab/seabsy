@@ -1,7 +1,10 @@
+#pragma once
+
+#include <optional>
 #include <variant>
+#include <vector>
 
 #include "tokenization.hpp"
-
 
 struct NodeExpr;
 
