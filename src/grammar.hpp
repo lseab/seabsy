@@ -21,13 +21,13 @@ struct NodeTermParen {
 };
 
 struct NodeTerm {
-    std::variant<NodeTermIntLit*, NodeTermIdent*, NodeTermParen*> term;
+    std::variant<NodeTermIntLit*, NodeTermIdent*, NodeTermParen*> variant;
 };
 
 struct NodeBinExpr;
 
 struct NodeExpr {
-    std::variant<NodeTerm*, NodeBinExpr*> expr;
+    std::variant<NodeTerm*, NodeBinExpr*> variant;
 };
 
 struct NodeStmt;
@@ -56,7 +56,7 @@ struct NodeIfPredElse {
 struct NodeStmtIf;
 
 struct NodeIfPred {
-    std::variant<NodeStmtIf*, NodeIfPredElse*> ifpred;
+    std::variant<NodeStmtIf*, NodeIfPredElse*> variant;
 };
 
 struct NodeStmtIf {
@@ -66,7 +66,7 @@ struct NodeStmtIf {
 };
 
 struct NodeStmt {
-    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtExit*> stmt;
+    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtExit*> variant;
 };
 
 struct NodeProgram {

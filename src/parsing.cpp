@@ -14,14 +14,14 @@ std::optional<NodeTerm*> Parser::parse_term() {
         NodeTermIntLit* term_int_lit = m_arena.alloc<NodeTermIntLit>();
         term_int_lit->int_lit = int_lit.value();
         NodeTerm* term = m_arena.alloc<NodeTerm>();
-        term->term = term_int_lit;
+        term->variant = term_int_lit;
         return term;
     }
     if (auto ident = try_consume(TokenType::ident)) {
         NodeTermIdent* term_ident = m_arena.alloc<NodeTermIdent>();
         term_ident->ident = ident.value();
         NodeTerm* term = m_arena.alloc<NodeTerm>();
-        term->term = term_ident;
+        term->variant = term_ident;
         return term;
     }
     if (try_consume(TokenType::left_paren)) {
@@ -29,7 +29,7 @@ std::optional<NodeTerm*> Parser::parse_term() {
         NodeTermParen* term_paren = m_arena.alloc<NodeTermParen>();
         term_paren->expr = expr.value();
         NodeTerm* term = m_arena.alloc<NodeTerm>();
-        term->term = term_paren;
+        term->variant = term_paren;
         try_consume(TokenType::right_paren, "Expected )");
         return term;
     }
@@ -80,7 +80,7 @@ std::optional<NodeExpr*> Parser::parse_expr(int min_prec) {
         return {};
     }
     auto term_expr = m_arena.alloc<NodeExpr>();
-    term_expr->expr = term.value();
+    term_expr->variant = term.value();
 
     while (true) {
         std::optional<Token> current_token = inspect();
@@ -102,11 +102,11 @@ std::optional<NodeExpr*> Parser::parse_expr(int min_prec) {
 
         auto bin_expr = m_arena.alloc<NodeBinExpr>();
         auto lhs_expr = m_arena.alloc<NodeExpr>();
-        lhs_expr->expr = term_expr->expr;
+        lhs_expr->variant = term_expr->variant;
         bin_expr->lhs = lhs_expr;
         bin_expr->rhs = rhs_expr.value();
         bin_expr->op = current_token.value();
-        term_expr->expr = bin_expr;
+        term_expr->variant = bin_expr;
     }
     return term_expr;
 }
@@ -115,7 +115,7 @@ std::optional<NodeIfPred*> Parser::parse_if_predicate() {
     if (try_consume(TokenType::_elif)) {
         NodeIfPred* ifpred = m_arena.alloc<NodeIfPred>();
         auto stmt_if = parse_if_stmt();
-        ifpred->ifpred = stmt_if.value();
+        ifpred->variant = stmt_if.value();
         return ifpred;
     }
     if (try_consume(TokenType::_else)) {
@@ -128,7 +128,7 @@ std::optional<NodeIfPred*> Parser::parse_if_predicate() {
             std::cerr << "Invalid scope" << std::endl;
             exit(EXIT_FAILURE);
         }
-        ifpred->ifpred = ifpred_else;
+        ifpred->variant = ifpred_else;
         return ifpred;
     }
     return {};
@@ -146,7 +146,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             exit(EXIT_FAILURE);
         }
         try_consume(TokenType::semi, "Expected ;");
-        stmt->stmt = stmt_return;
+        stmt->variant = stmt_return;
         return stmt;
     }
     if (try_consume(TokenType::_exit)) {
@@ -160,7 +160,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             exit(EXIT_FAILURE);
         }
         try_consume(TokenType::semi, "Expected ;");
-        stmt->stmt = stmt_exit;
+        stmt->variant = stmt_exit;
         return stmt;
     }
     if (
@@ -181,19 +181,19 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             exit(EXIT_FAILURE);
         }
         try_consume(TokenType::semi, "Expected ;");
-        stmt->stmt = stmt_let;
+        stmt->variant = stmt_let;
         return stmt;
     }
     if (try_consume(TokenType::open_curly)) {
         auto scope = parse_scope();
         auto stmt = m_arena.alloc<NodeStmt>();
-        stmt->stmt = scope.value();
+        stmt->variant = scope.value();
         return stmt;
     }
     if (try_consume(TokenType::_if)) {
         auto stmt_if = parse_if_stmt();
         NodeStmt* stmt = m_arena.alloc<NodeStmt>();
-        stmt->stmt = stmt_if.value();
+        stmt->variant = stmt_if.value();
         return stmt;
     }
     return {};

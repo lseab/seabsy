@@ -56,7 +56,7 @@ std::string handle_int64_immediates(uint64_t immediate) {
 }
 
 size_t Generator::gen_term(const NodeTerm* term) {
-    if (auto int_lit_term = std::get_if<NodeTermIntLit*>(&term->term)) {
+    if (auto int_lit_term = std::get_if<NodeTermIntLit*>(&term->variant)) {
         Token token = (*int_lit_term)->int_lit;
         uint64_t int_value = std::stoll(token.value.value());
         std::string immediate_output = handle_int64_immediates(int_value);
@@ -64,7 +64,7 @@ size_t Generator::gen_term(const NodeTerm* term) {
         increment_stack();
         return store("x0", 8);
     }
-    if (auto ident_term = std::get_if<NodeTermIdent*>(&term->term)) {
+    if (auto ident_term = std::get_if<NodeTermIdent*>(&term->variant)) {
         Token token = (*ident_term)->ident;
         std::string ident = token.value.value();
         std::optional<Var> var = m_symbol_handler.findSymbol(ident);
@@ -76,7 +76,7 @@ size_t Generator::gen_term(const NodeTerm* term) {
         increment_stack();
         return store("x0", 8);
     }
-    if (auto paren_term = std::get_if<NodeTermParen*>(&term->term)) {
+    if (auto paren_term = std::get_if<NodeTermParen*>(&term->variant)) {
         return gen_expr((*paren_term)->expr);
     }
     return {};
@@ -108,10 +108,10 @@ size_t Generator::gen_bin_expr(const NodeBinExpr* bin_expr) {
 }
 
 size_t Generator::gen_expr(const NodeExpr* expr) {
-    if (auto term_expr = std::get_if<NodeTerm*>(&expr->expr)) {
+    if (auto term_expr = std::get_if<NodeTerm*>(&expr->variant)) {
         return gen_term((*term_expr));
     }
-    if (auto bin_expr = std::get_if<NodeBinExpr*>(&expr->expr)) {
+    if (auto bin_expr = std::get_if<NodeBinExpr*>(&expr->variant)) {
         return gen_bin_expr((*bin_expr));
     }
     return {};
@@ -145,29 +145,29 @@ void Generator::gen_ifstmt(const NodeStmtIf* ifstmt) {
 }
 
 void Generator::gen_ifpred(const NodeIfPred* ifpred) {
-    if (auto ifpred_elif = std::get_if<NodeStmtIf*>(&ifpred->ifpred)) {
+    if (auto ifpred_elif = std::get_if<NodeStmtIf*>(&ifpred->variant)) {
         gen_ifstmt((*ifpred_elif));
     }
-    else if (auto ifpred_else = std::get_if<NodeIfPredElse*>(&ifpred->ifpred)) {
+    else if (auto ifpred_else = std::get_if<NodeIfPredElse*>(&ifpred->variant)) {
         gen_scope((*ifpred_else)->scope);
     }
 }
 
 void Generator::gen_stmt(const NodeStmt* stmt) {
-    if (auto stmt_return = std::get_if<NodeStmtReturn*>(&stmt->stmt)) {
+    if (auto stmt_return = std::get_if<NodeStmtReturn*>(&stmt->variant)) {
         gen_expr((*stmt_return)->expr);
         decrement_stack(m_stack_position);
         m_output << "    ret\n";
         return;
     }
-    if (auto stmt_exit = std::get_if<NodeStmtExit*>(&stmt->stmt)) {
+    if (auto stmt_exit = std::get_if<NodeStmtExit*>(&stmt->variant)) {
         size_t stack_pos = gen_expr((*stmt_exit)->expr);
         decrement_stack(m_stack_position);
         load("x0", 8 + (m_stack_position - stack_pos) * 16);
         _exit();
         return;
     }
-    if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->stmt)) {
+    if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->variant)) {
         std::string ident = (*stmt_let)->ident.value.value();
         if (m_symbol_handler.findSymbol(ident)) {
             std::cerr << "Redefinition of " << ident << std::endl;
@@ -177,11 +177,11 @@ void Generator::gen_stmt(const NodeStmt* stmt) {
         m_symbol_handler.declareSymbol(ident, m_stack_position);
         return;
     }
-    if (auto scope = std::get_if<NodeScope*>(&stmt->stmt)) {
+    if (auto scope = std::get_if<NodeScope*>(&stmt->variant)) {
         gen_scope((*scope));
         return;
     }
-    if (auto stmt_if = std::get_if<NodeStmtIf*>(&stmt->stmt)) {
+    if (auto stmt_if = std::get_if<NodeStmtIf*>(&stmt->variant)) {
         gen_ifstmt((*stmt_if));
     }
 }
