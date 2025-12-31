@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <memory>
 
 
 class ArenaAllocator {
@@ -15,9 +16,13 @@ public:
 
     template<typename T>
     T* alloc(){
-        void* offset = m_offset;
-        m_offset += sizeof(T);
-        return static_cast<T*>(offset);
+        size_t space = m_capacity - static_cast<std::size_t>(m_offset - m_buffer);
+        void* aligned_ptr = m_offset;
+        if (std::align(alignof(T), sizeof(T), aligned_ptr, space) == nullptr) {
+            return nullptr;
+        }
+        m_offset = static_cast<std::byte*>(aligned_ptr) + sizeof(T);
+        return std::construct_at(static_cast<T*>(aligned_ptr));
     }
 
     ArenaAllocator(const ArenaAllocator&) = delete;
