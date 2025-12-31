@@ -184,7 +184,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
         stmt->variant = stmt_let;
         return stmt;
     }
-    if (try_consume(TokenType::open_curly)) {
+    if (inspect().has_value() && inspect().value().type == TokenType::open_curly) {
         auto scope = parse_scope();
         auto stmt = m_arena.alloc<NodeStmt>();
         stmt->variant = scope.value();
