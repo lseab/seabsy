@@ -139,3 +139,15 @@ TEST_CASE("Parse if statement") {
     auto node_else_return_int_lit = expectNode<NodeTermIntLit>(*node_else_return_term);
     REQUIRE(node_else_return_int_lit->int_lit.value == std::to_string(2));
 }
+
+TEST_CASE("Parse variable assignment") {
+    std::string prog_string = "let x = 5; x = 2;";
+    std::optional<NodeProgram> prog = parse_stmt(prog_string);
+    REQUIRE(prog->stmts.size() == 2);
+    auto node_assign = expectNode<NodeStmtAssign>(*(prog->stmts[1]));
+    REQUIRE(node_assign->ident.type == TokenType::ident);
+    REQUIRE(node_assign->ident.value.value() == "x");
+    auto node_term = expectNode<NodeTerm>(*(node_assign->expr));
+    auto node_int_lit = expectNode<NodeTermIntLit>(*node_term);
+    REQUIRE(node_int_lit->int_lit.value == std::to_string(2));
+}

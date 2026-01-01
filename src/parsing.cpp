@@ -184,6 +184,25 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
         stmt->variant = stmt_let;
         return stmt;
     }
+    if (
+        inspect().has_value() && inspect().value().type == TokenType::ident &&
+        inspect().has_value() && inspect(1).value().type == TokenType::eq
+    ) {
+        NodeStmt* stmt = m_arena.alloc<NodeStmt>();
+        NodeStmtAssign* stmt_assign = m_arena.alloc<NodeStmtAssign>();
+        stmt_assign->ident = consume();
+        consume();
+        if (auto node_expr = parse_expr()) {
+            stmt_assign->expr = node_expr.value();
+        }
+        else {
+            std::cerr << "Expected expression" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        try_consume(TokenType::semi, "Expected ;");
+        stmt->variant = stmt_assign;
+        return stmt;
+    }
     if (inspect().has_value() && inspect().value().type == TokenType::open_curly) {
         auto scope = parse_scope();
         auto stmt = m_arena.alloc<NodeStmt>();

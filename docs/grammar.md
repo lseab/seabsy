@@ -3,8 +3,9 @@ $$
 [\text{Prog}] &\to [\text{Stmt}]^* \\
 [\text{Stmt}] &\to
     \begin{cases}
-        return\space\ [\text{Expr}]; \\
-        let\space\ \text{ident = [Expr];} \\
+        \text{return}\space\ [\text{Expr}]; \\
+        \text{let}\space\ \text{ident = [Expr];} \\
+        \text{ident = [Expr];} \\
         [\text{Scope}] \\
         \text{if} \space [\text{IfStmt}] \\
     \end{cases} \\

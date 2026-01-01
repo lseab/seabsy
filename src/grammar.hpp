@@ -65,8 +65,13 @@ struct NodeStmtIf {
     std::optional<NodeIfPred*> pred;
 };
 
+struct NodeStmtAssign {
+    Token ident;
+    NodeExpr* expr;
+};
+
 struct NodeStmt {
-    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeScope*, NodeStmtIf*, NodeStmtExit*> variant;
+    std::variant<NodeStmtReturn*, NodeStmtLet*, NodeStmtAssign*, NodeScope*, NodeStmtIf*, NodeStmtExit*> variant;
 };
 
 struct NodeProgram {

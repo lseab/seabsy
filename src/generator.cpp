@@ -177,6 +177,19 @@ void Generator::gen_stmt(const NodeStmt* stmt) {
         m_symbol_handler.declareSymbol(ident, m_stack_position);
         return;
     }
+    if (auto stmt_assign = std::get_if<NodeStmtAssign*>(&stmt->variant)) {
+        std::string ident = (*stmt_assign)->ident.value.value();
+        if (auto var = m_symbol_handler.findSymbol(ident)) {
+            size_t stack_pos = gen_expr((*stmt_assign)->expr);
+            load("x0", 8 + (m_stack_position - stack_pos) * 16);
+            store("x0", 8 + (m_stack_position - var.value().stack_position) * 16);
+        }
+        else {
+            std::cerr << "Undeclared identifier " << ident << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        return;
+    }
     if (auto scope = std::get_if<NodeScope*>(&stmt->variant)) {
         gen_scope((*scope));
         return;
