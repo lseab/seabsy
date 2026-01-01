@@ -119,8 +119,12 @@ size_t Generator::gen_expr(const NodeExpr* expr) {
 
 void Generator::gen_scope(const NodeScope* scope) {
     m_symbol_handler.enterScope();
+    size_t enter_stack_position = m_stack_position;
     for (NodeStmt* stmt : scope->stmts) {
         gen_stmt(stmt);
+    }
+    if (m_stack_position > enter_stack_position) {
+        decrement_stack(m_stack_position - enter_stack_position);
     }
     m_symbol_handler.exitScope();
 }
