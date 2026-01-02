@@ -44,8 +44,7 @@ std::optional<NodeScope*> Parser::parse_scope() {
             scope->stmts.push_back(stmt.value());
         }
         else {
-            std::cerr << "Invalid statment" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Invalid statment");
         }
     }
     try_consume(TokenType::close_curly, "Expected }");
@@ -59,16 +58,14 @@ std::optional<NodeStmtIf*> Parser::parse_if_stmt() {
         stmt_if->expr = expr.value();
     }
     else {
-        std::cerr << "Invalid expression" << std::endl;
-        exit(EXIT_FAILURE);
+        error_parse("Expected expression");
     }
     try_consume(TokenType::right_paren, "Expected )");
     if (auto scope = parse_scope()) {
         stmt_if->scope = scope.value();
     }
     else {
-        std::cerr << "Invalid scope" << std::endl;
-        exit(EXIT_FAILURE);
+        error_parse("Invalid scope");
     }
     stmt_if->pred = parse_if_predicate();
     return stmt_if;
@@ -96,8 +93,7 @@ std::optional<NodeExpr*> Parser::parse_expr(int min_prec) {
         int next_min_prec = prec.value() + 1;
         auto rhs_expr = parse_expr(next_min_prec);
         if (!rhs_expr.has_value()) {
-            std::cerr << "Expected expression" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Expected expression");
         }
 
         auto bin_expr = m_arena.alloc<NodeBinExpr>();
@@ -125,8 +121,7 @@ std::optional<NodeIfPred*> Parser::parse_if_predicate() {
             ifpred_else->scope = scope.value();
         }
         else {
-            std::cerr << "Invalid scope" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Invalid scope");
         }
         ifpred->variant = ifpred_else;
         return ifpred;
@@ -142,8 +137,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             stmt_return->expr = node_expr.value();
         }
         else {
-            std::cerr << "Invalid expression" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Invalid expression");
         }
         try_consume(TokenType::semi, "Expected ;");
         stmt->variant = stmt_return;
@@ -156,8 +150,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             stmt_exit->expr = node_expr.value();
         }
         else {
-            std::cerr << "Invalid expression" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Invalid expression");
         }
         try_consume(TokenType::semi, "Expected ;");
         stmt->variant = stmt_exit;
@@ -177,8 +170,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             stmt_let->expr = node_expr.value();
         }
         else {
-            std::cerr << "Expected expression after let" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Expected expression after let");
         }
         try_consume(TokenType::semi, "Expected ;");
         stmt->variant = stmt_let;
@@ -196,8 +188,7 @@ std::optional<NodeStmt*> Parser::parse_stmt() {
             stmt_assign->expr = node_expr.value();
         }
         else {
-            std::cerr << "Expected expression" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Expected expression");
         }
         try_consume(TokenType::semi, "Expected ;");
         stmt->variant = stmt_assign;
@@ -225,8 +216,7 @@ std::optional<NodeProgram> Parser::parse_program() {
             prog.stmts.push_back(stmt.value());
         }
         else {
-            std::cerr << "Invalid statment" << std::endl;
-            exit(EXIT_FAILURE);
+            error_parse("Invalid statement");
         }
     }
     return prog;
@@ -243,12 +233,17 @@ Token Parser::consume() {
     return value;
 }
 
+void Parser::error_parse(std::string error_msg) {
+    std::cerr << "[Parse Error] " << error_msg << " at line " << inspect(-1).value().line_no << std::endl;
+    exit(EXIT_FAILURE);
+}
+
 Token Parser::try_consume(TokenType type, const std::string& error_msg) {
     if (inspect().has_value() && inspect().value().type == type) {
         return consume();
     }
-    std::cerr << error_msg << std::endl;
-    exit(EXIT_FAILURE);
+    error_parse(error_msg);
+    return {};
 }
 
 std::optional<Token> Parser::try_consume(TokenType type) {

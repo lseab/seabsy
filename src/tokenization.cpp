@@ -21,6 +21,10 @@ Tokenizer::Tokenizer(const std::string& src)
 {
 }
 
+Token Tokenizer::create_token(TokenType type, std::optional<std::string> value) {
+    return Token{type, .line_no = line_count, .value = value};
+}
+
 std::vector<Token> Tokenizer::tokenize() {
     std::vector<Token> tokens;
     std::string buffer;
@@ -32,36 +36,36 @@ std::vector<Token> Tokenizer::tokenize() {
                 buffer.push_back(consume());
             }
             if (buffer == "return") {
-                tokens.push_back(Token{.type = TokenType::_return});
+                tokens.push_back(create_token(TokenType::_return));
                 buffer.clear();
                 continue;
             }
             if (buffer == "let") {
-                tokens.push_back(Token{.type = TokenType::let});
+                tokens.push_back(create_token(TokenType::let));
                 buffer.clear();
                 continue;
             }
             if (buffer == "if") {
-                tokens.push_back(Token{.type = TokenType::_if});
+                tokens.push_back(create_token(TokenType::_if));
                 buffer.clear();
                 continue;
             }
             if (buffer == "elif") {
-                tokens.push_back(Token{.type = TokenType::_elif});
+                tokens.push_back(create_token(TokenType::_elif));
                 buffer.clear();
                 continue;
             }
             if (buffer == "else") {
-                tokens.push_back(Token{.type = TokenType::_else});
+                tokens.push_back(create_token(TokenType::_else));
                 buffer.clear();
                 continue;
             }
             if (buffer == "exit") {
-                tokens.push_back(Token{.type = TokenType::_exit});
+                tokens.push_back(create_token(TokenType::_exit));
                 buffer.clear();
                 continue;
             }
-            tokens.push_back(Token{.type = TokenType::ident, .value = buffer});
+            tokens.push_back(create_token(TokenType::ident, buffer));
             buffer.clear();
             continue;
         }
@@ -70,28 +74,28 @@ std::vector<Token> Tokenizer::tokenize() {
             while (inspect().has_value() && std::isdigit(inspect().value())) {
                 buffer.push_back(consume());
             }
-            tokens.push_back(Token{.type = TokenType::int_lit, .value = buffer});
+            tokens.push_back(create_token(TokenType::int_lit, buffer));
             buffer.clear();
         }
         else if (inspect().value() == ';') {
             consume();
-            tokens.push_back(Token{.type = TokenType::semi});
+            tokens.push_back(create_token(TokenType::semi));
         }
         else if (inspect().value() == '=') {
             consume();
-            tokens.push_back(Token{.type = TokenType::eq});
+            tokens.push_back(create_token(TokenType::eq));
         }
         else if (inspect().value() == '+') {
             consume();
-            tokens.push_back(Token{.type = TokenType::plus});
+            tokens.push_back(create_token(TokenType::plus));
         }
         else if (inspect().value() == '*') {
             consume();
-            tokens.push_back(Token{.type = TokenType::star});
+            tokens.push_back(create_token(TokenType::star));
         }
         else if (inspect().value() == '-') {
             consume();
-            tokens.push_back(Token{.type = TokenType::minus});
+            tokens.push_back(create_token(TokenType::minus));
         }
         else if (inspect().value() == '/') {
             consume();
@@ -115,24 +119,28 @@ std::vector<Token> Tokenizer::tokenize() {
                 }
             }
             else {
-                tokens.push_back(Token{.type = TokenType::fslash});
+                tokens.push_back(create_token(TokenType::fslash));
             }
         }
         else if (inspect().value() == '(') {
             consume();
-            tokens.push_back(Token{.type = TokenType::left_paren});
+            tokens.push_back(create_token(TokenType::left_paren));
         }
         else if (inspect().value() == ')') {
             consume();
-            tokens.push_back(Token{.type = TokenType::right_paren});
+            tokens.push_back(create_token(TokenType::right_paren));
         }
         else if (inspect().value() == '{') {
             consume();
-            tokens.push_back(Token{.type = TokenType::open_curly});
+            tokens.push_back(create_token(TokenType::open_curly));
         }
         else if (inspect().value() == '}') {
             consume();
-            tokens.push_back(Token{.type = TokenType::close_curly});
+            tokens.push_back(create_token(TokenType::close_curly));
+        }
+        else if (inspect().value() == '\n') {
+            consume();
+            line_count++;
         }
         else if (std::isspace(inspect().value())) {
             consume();

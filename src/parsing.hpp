@@ -25,6 +25,7 @@ private:
     std::optional<Token> inspect(int offset = 0) const;
     Token consume();
 
+    void error_parse(std::string msg);
     Token try_consume(TokenType type, const std::string& error_msg);
     std::optional<Token> try_consume(TokenType type);
 
