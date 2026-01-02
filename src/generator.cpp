@@ -132,28 +132,50 @@ void Generator::gen_scope(const NodeScope* scope) {
 void Generator::gen_ifstmt(const NodeStmtIf* ifstmt) {
     size_t stack_pos = gen_expr(ifstmt->expr);
     load("x8", 8 + (m_stack_position - stack_pos) * 16);
+    decrement_stack();
     sub("x8", "x8", "#0", true);
     cset("x8", "eq");
-    std::string true_branch = get_branch_label();
-    std::string false_branch = get_branch_label();
-    tbnz("w8", "#0", false_branch);
-    branch(true_branch);
-    add_branch(true_branch);
-    size_t stack_pos_before_branch = m_stack_position;
+    std::string false_label = get_branch_label();
+    tbnz("w8", "#0", false_label);
     gen_scope(ifstmt->scope);
-    add_branch(false_branch);
-    m_stack_position = stack_pos_before_branch;
     if (ifstmt->pred.has_value()) {
-        gen_ifpred(ifstmt->pred.value());
+        const std::string end_label = get_branch_label();
+        branch(end_label);
+        add_branch(false_label);
+        gen_ifpred(ifstmt->pred.value(), end_label);
+        add_branch(end_label);
+    }
+    else {
+        branch(false_label);
+        add_branch(false_label);
     }
 }
 
-void Generator::gen_ifpred(const NodeIfPred* ifpred) {
+void Generator::gen_ifpred(const NodeIfPred* ifpred, const std::string end_label) {
     if (auto ifpred_elif = std::get_if<NodeStmtIf*>(&ifpred->variant)) {
-        gen_ifstmt((*ifpred_elif));
+        auto ifstmt = (*ifpred_elif);
+        size_t stack_pos = gen_expr(ifstmt->expr);
+        load("x8", 8 + (m_stack_position - stack_pos) * 16);
+        decrement_stack();
+        sub("x8", "x8", "#0", true);
+        cset("x8", "eq");
+        if (ifstmt->pred.has_value()) {
+            std::string false_label = get_branch_label();
+            tbnz("w8", "#0", false_label);
+            gen_scope(ifstmt->scope);
+            branch(end_label);
+            add_branch(false_label);
+            gen_ifpred(ifstmt->pred.value(), end_label);
+        }
+        else {
+            tbnz("w8", "#0", end_label);
+            gen_scope(ifstmt->scope);
+            branch(end_label);
+        }
     }
     else if (auto ifpred_else = std::get_if<NodeIfPredElse*>(&ifpred->variant)) {
         gen_scope((*ifpred_else)->scope);
+        branch(end_label);
     }
 }
 

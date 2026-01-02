@@ -20,7 +20,7 @@ public:
     size_t gen_expr(const NodeExpr* expr);
     void gen_scope(const NodeScope* scope);
     void gen_ifstmt(const NodeStmtIf* ifstmt);
-    void gen_ifpred(const NodeIfPred* ifpred);
+    void gen_ifpred(const NodeIfPred* ifpred, const std::string end_label);
     void gen_stmt(const NodeStmt* stmt);
     std::string gen_program();
 
