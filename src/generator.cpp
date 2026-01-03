@@ -7,9 +7,11 @@
 Generator::Generator(NodeProgram prog)
     : m_prog(prog)
 {
+    // Available temporary registers. x0 is kept free for return/exit hand-off.
+    m_free_regs = {"x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8"};
 }
 
-std::string handle_int64_immediates(uint64_t immediate) {
+std::string handle_int64_immediates(const uint64_t immediate, const std::string& target_reg) {
     std::stringstream output;
     bool started = false;
 
@@ -31,7 +33,7 @@ std::string handle_int64_immediates(uint64_t immediate) {
         int shift = i * 16;
         if (!started) {
             if (chunk != 0) {
-                output << "    movz x0, #";
+                output << "    movz " << target_reg << ", #";
                 emit_hex16(chunk);
                 if (shift != 0) add_shift(shift);
                 output << "\n";
@@ -39,7 +41,7 @@ std::string handle_int64_immediates(uint64_t immediate) {
             }
         }
         else if (chunk != 0) {
-            output << "    movk x0, #";
+            output << "    movk " << target_reg << ", #";
             emit_hex16(chunk);
             add_shift(shift);
             output << "\n";
@@ -47,7 +49,7 @@ std::string handle_int64_immediates(uint64_t immediate) {
     }
 
     if (!started) {
-        output << "    movz x0, #";
+        output << "    movz " << target_reg << ", #";
         emit_hex16(0);
         output << "\n";
     }
@@ -55,14 +57,13 @@ std::string handle_int64_immediates(uint64_t immediate) {
     return output.str();
 }
 
-size_t Generator::gen_term(const NodeTerm* term) {
+std::string Generator::gen_term(const NodeTerm* term) {
     if (auto int_lit_term = std::get_if<NodeTermIntLit*>(&term->variant)) {
         Token token = (*int_lit_term)->int_lit;
         uint64_t int_value = std::stoll(token.value.value());
-        std::string immediate_output = handle_int64_immediates(int_value);
-        m_output << immediate_output;
-        increment_stack();
-        return store("x0", 8);
+        std::string target_reg = acquire_reg();
+        m_output << handle_int64_immediates(int_value, target_reg);
+        return target_reg;
     }
     if (auto ident_term = std::get_if<NodeTermIdent*>(&term->variant)) {
         Token token = (*ident_term)->ident;
@@ -72,49 +73,49 @@ size_t Generator::gen_term(const NodeTerm* term) {
             std::cerr << "Undefined symbol " << ident << std::endl;
             exit(EXIT_FAILURE);
         }
-        load("x0", 8 + (m_stack_position - var.value().stack_position) * 16);
-        increment_stack();
-        return store("x0", 8);
+        std::string target_reg = acquire_reg();
+        load(target_reg, 8 + (m_stack_position - var.value().stack_position) * 16);
+        return target_reg;
     }
     if (auto paren_term = std::get_if<NodeTermParen*>(&term->variant)) {
         return gen_expr((*paren_term)->expr);
     }
-    return {};
+    return "";
 }
 
-size_t Generator::gen_bin_expr(const NodeBinExpr* bin_expr) {
-    size_t stack_pos_l = gen_expr(bin_expr->lhs);
-    size_t stack_pos_r = gen_expr(bin_expr->rhs);
-    load("x7", 8 + (m_stack_position - stack_pos_l) * 16);
-    load("x8", 8 + (m_stack_position - stack_pos_r) * 16);
+std::string Generator::gen_bin_expr(const NodeBinExpr* bin_expr) {
+    std::string lhs_reg = gen_expr(bin_expr->lhs);
+    std::string rhs_reg = gen_expr(bin_expr->rhs);
     switch (bin_expr->op.type) {
         case TokenType::plus:
-            add("x0", "x7", "x8");
+            add(lhs_reg, lhs_reg, rhs_reg);
             break;
         case TokenType::minus:
-            sub("x0", "x7", "x8");
+            sub(lhs_reg, lhs_reg, rhs_reg);
             break;
         case TokenType::fslash:
-            div("x0", "x7", "x8");
+            div(lhs_reg, lhs_reg, rhs_reg);
             break;
         case TokenType::star:
-            mul("x0", "x7", "x8");
+            mul(lhs_reg, lhs_reg, rhs_reg);
             break;
         default:
-            return {};
+            return "";
     }
-    increment_stack();
-    return store("x0", 8);
+    if (lhs_reg != rhs_reg) {
+        release_reg(rhs_reg);
+    }
+    return lhs_reg;
 }
 
-size_t Generator::gen_expr(const NodeExpr* expr) {
+std::string Generator::gen_expr(const NodeExpr* expr) {
     if (auto term_expr = std::get_if<NodeTerm*>(&expr->variant)) {
         return gen_term((*term_expr));
     }
     if (auto bin_expr = std::get_if<NodeBinExpr*>(&expr->variant)) {
         return gen_bin_expr((*bin_expr));
     }
-    return {};
+    return "";
 }
 
 void Generator::gen_scope(const NodeScope* scope) {
@@ -123,20 +124,15 @@ void Generator::gen_scope(const NodeScope* scope) {
     for (NodeStmt* stmt : scope->stmts) {
         gen_stmt(stmt);
     }
-    if (m_stack_position > enter_stack_position) {
-        decrement_stack(m_stack_position - enter_stack_position);
-    }
+    m_stack_position = enter_stack_position;
     m_symbol_handler.exitScope();
 }
 
 void Generator::gen_ifstmt(const NodeStmtIf* ifstmt) {
-    size_t stack_pos = gen_expr(ifstmt->expr);
-    load("x8", 8 + (m_stack_position - stack_pos) * 16);
-    decrement_stack();
-    sub("x8", "x8", "#0", true);
-    cset("x8", "eq");
+    std::string cond_reg = gen_expr(ifstmt->expr);
     std::string false_label = get_branch_label();
-    tbnz("w8", "#0", false_label);
+    cbz(cond_reg, false_label);
+    release_reg(cond_reg);
     gen_scope(ifstmt->scope);
     if (ifstmt->pred.has_value()) {
         const std::string end_label = get_branch_label();
@@ -154,21 +150,19 @@ void Generator::gen_ifstmt(const NodeStmtIf* ifstmt) {
 void Generator::gen_ifpred(const NodeIfPred* ifpred, const std::string end_label) {
     if (auto ifpred_elif = std::get_if<NodeStmtIf*>(&ifpred->variant)) {
         auto ifstmt = (*ifpred_elif);
-        size_t stack_pos = gen_expr(ifstmt->expr);
-        load("x8", 8 + (m_stack_position - stack_pos) * 16);
-        decrement_stack();
-        sub("x8", "x8", "#0", true);
-        cset("x8", "eq");
+        std::string cond_reg = gen_expr(ifstmt->expr);
         if (ifstmt->pred.has_value()) {
             std::string false_label = get_branch_label();
-            tbnz("w8", "#0", false_label);
+            cbz(cond_reg, false_label);
+            release_reg(cond_reg);
             gen_scope(ifstmt->scope);
             branch(end_label);
             add_branch(false_label);
             gen_ifpred(ifstmt->pred.value(), end_label);
         }
         else {
-            tbnz("w8", "#0", end_label);
+            cbz(cond_reg, end_label);
+            release_reg(cond_reg);
             gen_scope(ifstmt->scope);
             branch(end_label);
         }
@@ -181,30 +175,40 @@ void Generator::gen_ifpred(const NodeIfPred* ifpred, const std::string end_label
 
 void Generator::gen_stmt(const NodeStmt* stmt) {
     if (auto stmt_return = std::get_if<NodeStmtReturn*>(&stmt->variant)) {
-        gen_expr((*stmt_return)->expr);
+        std::string result_reg = gen_expr((*stmt_return)->expr);
         decrement_stack(m_stack_position);
+        if (result_reg != "x0") {
+            m_output << "    mov x0, " << result_reg << "\n";
+        }
+        release_reg(result_reg);
         m_output << "    ret\n";
         return;
     }
     if (auto stmt_exit = std::get_if<NodeStmtExit*>(&stmt->variant)) {
-        size_t stack_pos = gen_expr((*stmt_exit)->expr);
+        std::string result_reg = gen_expr((*stmt_exit)->expr);
+        if (result_reg != "x0") {
+            m_output << "    mov x0, " << result_reg << "\n";
+        }
         decrement_stack(m_stack_position);
-        load("x0", 8 + (m_stack_position - stack_pos) * 16);
+        release_reg(result_reg);
         _exit();
         return;
     }
     if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->variant)) {
         std::string ident = (*stmt_let)->ident.value.value();
-        gen_expr((*stmt_let)->expr);
+        std::string result_reg = gen_expr((*stmt_let)->expr);
+        increment_stack();
+        store(result_reg, 8);
         m_symbol_handler.declareSymbol(ident, m_stack_position);
+        release_reg(result_reg);
         return;
     }
     if (auto stmt_assign = std::get_if<NodeStmtAssign*>(&stmt->variant)) {
         std::string ident = (*stmt_assign)->ident.value.value();
         if (auto var = m_symbol_handler.findSymbol(ident)) {
-            size_t stack_pos = gen_expr((*stmt_assign)->expr);
-            load("x0", 8 + (m_stack_position - stack_pos) * 16);
-            store("x0", 8 + (m_stack_position - var.value().stack_position) * 16);
+            std::string result_reg = gen_expr((*stmt_assign)->expr);
+            store(result_reg, 8 + (m_stack_position - var.value().stack_position) * 16);
+            release_reg(result_reg);
         }
         else {
             std::cerr << "Undeclared identifier " << ident << std::endl;
@@ -272,12 +276,22 @@ void Generator::div(std::string result_reg, std::string lhs_reg, std::string rhs
     m_output << "    sdiv " << result_reg << ", " << lhs_reg << ", " << rhs_reg << "\n";
 }
 
-void Generator::cset(std::string reg, std::string condition) {
-    m_output << "    cset " << reg << ", " << condition << "\n";
+void Generator::cbz(std::string cond_reg, std::string branch_label) {
+    m_output << "    cbz " << cond_reg << ", " << branch_label << "\n";
 }
 
-void Generator::tbnz(std::string reg, std::string bit, std::string branch_label) {
-    m_output << "    tbnz " << reg << ", " << bit << ", " << branch_label << "\n";
+std::string Generator::acquire_reg() {
+    if (m_free_regs.empty()) {
+        std::cerr << "Register exhaustion during code generation" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    std::string reg = m_free_regs.back();
+    m_free_regs.pop_back();
+    return reg;
+}
+
+void Generator::release_reg(const std::string& reg) {
+    m_free_regs.push_back(reg);
 }
 
 std::string Generator::get_branch_label() {

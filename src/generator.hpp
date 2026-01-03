@@ -4,20 +4,21 @@
 #include <cstddef>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "grammar.hpp"
 #include "scopes.hpp"
 
 
-std::string handle_int64_immediates(uint64_t immediate);
+std::string handle_int64_immediates(const uint64_t immediate, const std::string& target_reg);
 
 class Generator {
 public:
     explicit Generator(NodeProgram prog);
 
-    size_t gen_term(const NodeTerm* term);
-    size_t gen_bin_expr(const NodeBinExpr* bin_expr);
-    size_t gen_expr(const NodeExpr* expr);
+    std::string gen_term(const NodeTerm* term);
+    std::string gen_bin_expr(const NodeBinExpr* bin_expr);
+    std::string gen_expr(const NodeExpr* expr);
     void gen_scope(const NodeScope* scope);
     void gen_ifstmt(const NodeStmtIf* ifstmt);
     void gen_ifpred(const NodeIfPred* ifpred, const std::string end_label);
@@ -33,8 +34,9 @@ private:
     void mul(std::string result_reg, std::string lhs_reg, std::string rhs_reg);
     void sub(std::string result_reg, std::string lhs_reg, std::string rhs_reg, bool with_flags = false);
     void div(std::string result_reg, std::string lhs_reg, std::string rhs_reg);
-    void cset(std::string reg, std::string condition);
-    void tbnz(std::string reg, std::string bit, std::string branch_label);
+    void cbz(std::string cond_reg, std::string branch_label);
+    std::string acquire_reg();
+    void release_reg(const std::string& reg);
     std::string get_branch_label();
     void branch(std::string branch_label);
     void add_branch(std::string branch_label);
@@ -45,4 +47,5 @@ private:
     size_t m_stack_position = 0;
     size_t m_branch_number = 0;
     SymbolManager m_symbol_handler;
+    std::vector<std::string> m_free_regs;
 };
