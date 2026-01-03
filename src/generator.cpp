@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <optional>
 
 
 Generator::Generator(NodeProgram prog)
@@ -57,6 +58,40 @@ std::string handle_int64_immediates(const uint64_t immediate, const std::string&
     return output.str();
 }
 
+std::optional<int64_t> Generator::eval_const_expr(const NodeExpr* expr) {
+    if (auto term_expr = std::get_if<NodeTerm*>(&expr->variant)) {
+        const NodeTerm* term = *term_expr;
+        if (auto int_lit_term = std::get_if<NodeTermIntLit*>(&term->variant)) {
+            return std::stoll((*int_lit_term)->int_lit.value.value());
+        }
+        if (auto paren_term = std::get_if<NodeTermParen*>(&term->variant)) {
+            return eval_const_expr((*paren_term)->expr);
+        }
+        return {};
+    }
+    if (auto bin_expr = std::get_if<NodeBinExpr*>(&expr->variant)) {
+        const NodeBinExpr* bin = *bin_expr;
+        auto lhs = eval_const_expr(bin->lhs);
+        auto rhs = eval_const_expr(bin->rhs);
+        if (!lhs.has_value() || !rhs.has_value()) {
+            return {};
+        }
+        switch (bin->op.type) {
+            case TokenType::plus:
+                return lhs.value() + rhs.value();
+            case TokenType::minus:
+                return lhs.value() - rhs.value();
+            case TokenType::star:
+                return lhs.value() * rhs.value();
+            case TokenType::fslash:
+                return lhs.value() / rhs.value();
+            default:
+                return {};
+        }
+    }
+    return {};
+}
+
 std::string Generator::gen_term(const NodeTerm* term) {
     if (auto int_lit_term = std::get_if<NodeTermIntLit*>(&term->variant)) {
         Token token = (*int_lit_term)->int_lit;
@@ -109,6 +144,11 @@ std::string Generator::gen_bin_expr(const NodeBinExpr* bin_expr) {
 }
 
 std::string Generator::gen_expr(const NodeExpr* expr) {
+    if (auto const_val = eval_const_expr(expr)) {
+        std::string target_reg = acquire_reg();
+        m_output << handle_int64_immediates(static_cast<uint64_t>(const_val.value()), target_reg);
+        return target_reg;
+    }
     if (auto term_expr = std::get_if<NodeTerm*>(&expr->variant)) {
         return gen_term((*term_expr));
     }

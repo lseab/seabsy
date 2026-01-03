@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -35,6 +36,7 @@ private:
     void sub(std::string result_reg, std::string lhs_reg, std::string rhs_reg, bool with_flags = false);
     void div(std::string result_reg, std::string lhs_reg, std::string rhs_reg);
     void cbz(std::string cond_reg, std::string branch_label);
+    std::optional<int64_t> eval_const_expr(const NodeExpr* expr);
     std::string acquire_reg();
     void release_reg(const std::string& reg);
     std::string get_branch_label();
