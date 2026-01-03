@@ -12,9 +12,7 @@ struct Var {
     size_t stack_position;
 };
 
-struct Scope {
-    std::unordered_map<std::string, Var> m_var_map;
-};
+using Scope = std::unordered_map<std::string, Var>;
 
 class SymbolManager {
 public:
@@ -26,5 +24,5 @@ public:
     void declareSymbol(std::string ident, size_t stack_position);
 
 private:
-    std::vector<Scope*> scopes;
+    std::vector<Scope> scopes;
 };
