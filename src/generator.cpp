@@ -195,10 +195,6 @@ void Generator::gen_stmt(const NodeStmt* stmt) {
     }
     if (auto stmt_let = std::get_if<NodeStmtLet*>(&stmt->variant)) {
         std::string ident = (*stmt_let)->ident.value.value();
-        if (m_symbol_handler.findSymbol(ident)) {
-            std::cerr << "Redefinition of " << ident << std::endl;
-            exit(EXIT_FAILURE);
-        }
         gen_expr((*stmt_let)->expr);
         m_symbol_handler.declareSymbol(ident, m_stack_position);
         return;
