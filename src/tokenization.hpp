@@ -38,13 +38,14 @@ class Tokenizer {
 public:
     explicit Tokenizer(const std::string& src);
     std::vector<Token> tokenize();
-    Token create_token(TokenType type, std::optional<std::string> value = {});
+    void addToken(TokenType type, std::optional<std::string> value = {});
 
 private:
     std::optional<char> inspect(int offset = 0) const;
     char consume();
 
     const std::string m_src;
+    std::vector<Token> tokens;
     size_t m_index = 0;
     int line_count = 1;
 };

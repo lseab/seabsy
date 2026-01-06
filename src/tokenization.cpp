@@ -1,7 +1,17 @@
 #include <cctype>
+#include <unordered_map>
 
 #include "tokenization.hpp"
 
+
+static const std::unordered_map<std::string, TokenType> keywords = {
+    {"return", TokenType::_return},
+    {"let", TokenType::let},
+    {"if", TokenType::_if},
+    {"elif", TokenType::_elif},
+    {"else", TokenType::_else},
+    {"exit", TokenType::_exit}
+};
 
 std::optional<int> bin_prec(TokenType type) {
     switch (type) {
@@ -21,134 +31,102 @@ Tokenizer::Tokenizer(const std::string& src)
 {
 }
 
-Token Tokenizer::create_token(TokenType type, std::optional<std::string> value) {
-    return Token{type, .line_no = line_count, .value = value};
+void Tokenizer::addToken(TokenType type, std::optional<std::string> value) {
+    tokens.push_back(Token{type, .line_no = line_count, .value = value});
 }
 
 std::vector<Token> Tokenizer::tokenize() {
-    std::vector<Token> tokens;
+    tokens.clear();
+    line_count = 1;
+    m_index = 0;
     std::string buffer;
 
     while (inspect().has_value()) {
-        if (std::isalpha(inspect().value())) {
-            buffer.push_back(consume());
-            while (inspect().has_value() && std::isalnum(inspect().value())) {
-                buffer.push_back(consume());
-            }
-            if (buffer == "return") {
-                tokens.push_back(create_token(TokenType::_return));
-                buffer.clear();
-                continue;
-            }
-            if (buffer == "let") {
-                tokens.push_back(create_token(TokenType::let));
-                buffer.clear();
-                continue;
-            }
-            if (buffer == "if") {
-                tokens.push_back(create_token(TokenType::_if));
-                buffer.clear();
-                continue;
-            }
-            if (buffer == "elif") {
-                tokens.push_back(create_token(TokenType::_elif));
-                buffer.clear();
-                continue;
-            }
-            if (buffer == "else") {
-                tokens.push_back(create_token(TokenType::_else));
-                buffer.clear();
-                continue;
-            }
-            if (buffer == "exit") {
-                tokens.push_back(create_token(TokenType::_exit));
-                buffer.clear();
-                continue;
-            }
-            tokens.push_back(create_token(TokenType::ident, buffer));
-            buffer.clear();
-            continue;
-        }
-        else if (std::isdigit(inspect().value())) {
-            buffer.push_back(consume());
-            while (inspect().has_value() && std::isdigit(inspect().value())) {
-                buffer.push_back(consume());
-            }
-            tokens.push_back(create_token(TokenType::int_lit, buffer));
-            buffer.clear();
-        }
-        else if (inspect().value() == ';') {
-            consume();
-            tokens.push_back(create_token(TokenType::semi));
-        }
-        else if (inspect().value() == '=') {
-            consume();
-            tokens.push_back(create_token(TokenType::eq));
-        }
-        else if (inspect().value() == '+') {
-            consume();
-            tokens.push_back(create_token(TokenType::plus));
-        }
-        else if (inspect().value() == '*') {
-            consume();
-            tokens.push_back(create_token(TokenType::star));
-        }
-        else if (inspect().value() == '-') {
-            consume();
-            tokens.push_back(create_token(TokenType::minus));
-        }
-        else if (inspect().value() == '/') {
-            consume();
-            if (inspect().has_value() && inspect().value() == '/') {
-                while (inspect().has_value()) {
-                    if (inspect().value() == '\n') {
+        char c = consume();
+        switch (c) {
+            case(';'):
+                addToken(TokenType::semi);
+                break;
+            case('='):
+                addToken(TokenType::eq);
+                break;
+            case('+'):
+                addToken(TokenType::plus);
+                break;
+            case('*'):
+                addToken(TokenType::star);
+                break;
+            case('-'):
+                addToken(TokenType::minus);
+                break;
+            case('('):
+                addToken(TokenType::left_paren);
+                break;
+            case(')'):
+                addToken(TokenType::right_paren);
+                break;
+            case('{'):
+                addToken(TokenType::open_curly);
+                break;
+            case('}'):
+                addToken(TokenType::close_curly);
+                break;
+            case('/'):
+                if (inspect().has_value() && inspect().value() == '/') {
+                    while (inspect().has_value()) {
+                        if (inspect().value() == '\n') {
+                            consume();
+                            break;
+                        }
                         consume();
-                        break;
                     }
-                    consume();
                 }
-            }
-            else if (inspect().has_value() && inspect().value() == '*') {
-                while (inspect().has_value()) {
-                    if (inspect().value() == '*' && inspect(1).value() == '/') {
+                else if (inspect().has_value() && inspect().value() == '*') {
+                    while (inspect().has_value()) {
+                        if (inspect().value() == '*' && inspect(1).has_value() && inspect(1).value() == '/') {
+                            consume();
+                            consume();
+                            break;
+                        }
                         consume();
-                        consume();
-                        break;
                     }
-                    consume();
                 }
-            }
-            else {
-                tokens.push_back(create_token(TokenType::fslash));
-            }
-        }
-        else if (inspect().value() == '(') {
-            consume();
-            tokens.push_back(create_token(TokenType::left_paren));
-        }
-        else if (inspect().value() == ')') {
-            consume();
-            tokens.push_back(create_token(TokenType::right_paren));
-        }
-        else if (inspect().value() == '{') {
-            consume();
-            tokens.push_back(create_token(TokenType::open_curly));
-        }
-        else if (inspect().value() == '}') {
-            consume();
-            tokens.push_back(create_token(TokenType::close_curly));
-        }
-        else if (inspect().value() == '\n') {
-            consume();
-            line_count++;
-        }
-        else if (std::isspace(inspect().value())) {
-            consume();
+                else {
+                    addToken(TokenType::fslash);
+                }
+                break;
+            case('\n'):
+                line_count++;
+                break;
+            default:
+                if (std::isalpha(static_cast<unsigned char>(c))) {
+                    buffer.push_back(c);
+                    while (inspect().has_value() && std::isalnum(static_cast<unsigned char>(inspect().value()))) {
+                        buffer.push_back(consume());
+                    }
+                    if (auto it = keywords.find(buffer); it != keywords.end()) {
+                        addToken(it->second);
+                        buffer.clear();
+                    }
+                    else {
+                        addToken(TokenType::ident, buffer);
+                        buffer.clear();
+                    }
+                }
+                else if (std::isdigit(static_cast<unsigned char>(c))) {
+                    buffer.push_back(c);
+                    while (inspect().has_value() && std::isdigit(static_cast<unsigned char>(inspect().value()))) {
+                        buffer.push_back(consume());
+                    }
+                    addToken(TokenType::int_lit, buffer);
+                    buffer.clear();
+                }
+                break;
         }
     }
 
     m_index = 0;
-    return tokens;
+    return Tokenizer::tokens;
 }
 
 std::optional<char> Tokenizer::inspect(int offset) const {
