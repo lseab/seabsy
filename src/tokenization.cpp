@@ -76,6 +76,7 @@ std::vector<Token> Tokenizer::tokenize() {
                     while (inspect().has_value()) {
                         if (inspect().value() == '\n') {
                             consume();
+                            line_count++;
                             break;
                         }
                         consume();
@@ -88,7 +89,10 @@ std::vector<Token> Tokenizer::tokenize() {
                             consume();
                             break;
                         }
-                        consume();
+                        char next = consume();
+                        if (next == '\n') {
+                            line_count++;
+                        }
                     }
                 }
                 else {
