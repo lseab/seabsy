@@ -233,8 +233,15 @@ Token Parser::consume() {
     return value;
 }
 
-void Parser::error_parse(std::string error_msg) {
-    std::cerr << "[Parse Error] " << error_msg << " at line " << inspect(-1).value().line_no << std::endl;
+void Parser::error_parse(const std::string& error_msg) {
+    std::string location = "end of file";
+    if (auto current = inspect()) {
+        location = "line " + std::to_string(current->line_no);
+    }
+    else if (m_index > 0 && m_index - 1 < m_tokens.size()) {
+        location = "line " + std::to_string(m_tokens.at(m_index - 1).line_no);
+    }
+    std::cerr << "[Parse Error] " << error_msg << " at " << location << std::endl;
     exit(EXIT_FAILURE);
 }
 
